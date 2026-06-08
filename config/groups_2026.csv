@@ -1,0 +1,49 @@
+group,team,confederation,is_pot1
+A,Mexico,CONCACAF,1
+A,South Africa,CAF,0
+A,South Korea,AFC,0
+A,Czechia,UEFA,0
+B,Canada,CONCACAF,1
+B,Switzerland,UEFA,0
+B,Bosnia and Herzegovina,UEFA,0
+B,Qatar,AFC,0
+C,Brazil,CONMEBOL,1
+C,Morocco,CAF,0
+C,Scotland,UEFA,0
+C,Haiti,CONCACAF,0
+D,United States,CONCACAF,1
+D,Paraguay,CONMEBOL,0
+D,Australia,AFC,0
+D,Türkiye,UEFA,0
+E,Germany,UEFA,1
+E,Ecuador,CONMEBOL,0
+E,Ivory Coast,CAF,0
+E,Curaçao,CONCACAF,0
+F,Netherlands,UEFA,1
+F,Japan,AFC,0
+F,Sweden,UEFA,0
+F,Tunisia,CAF,0
+G,Belgium,UEFA,1
+G,Egypt,CAF,0
+G,Iran,AFC,0
+G,New Zealand,OFC,0
+H,Spain,UEFA,1
+H,Uruguay,CONMEBOL,0
+H,Cape Verde,CAF,0
+H,Saudi Arabia,AFC,0
+I,France,UEFA,1
+I,Senegal,CAF,0
+I,Norway,UEFA,0
+I,Iraq,AFC,0
+J,Argentina,CONMEBOL,1
+J,Austria,UEFA,0
+J,Algeria,CAF,0
+J,Jordan,AFC,0
+K,Portugal,UEFA,1
+K,Colombia,CONMEBOL,0
+K,DR Congo,CAF,0
+K,Uzbekistan,AFC,0
+L,England,UEFA,1
+L,Croatia,UEFA,0
+L,Ghana,CAF,0
+L,Panama,CONCACAF,0

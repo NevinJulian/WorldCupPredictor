@@ -1,0 +1,140 @@
+"""Unit tests on synthetic data — no network needed. Run: `pytest -q`
+
+These guard the two things most easily broken: Elo correctness and as-of (no-leakage) features.
+"""
+import pathlib
+import sys
+
+import numpy as np
+import pandas as pd
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from wcpred import clean, datasets, elo, features, tournament  # noqa: E402
+
+
+def _synthetic_results(n_per_pair: int = 6) -> pd.DataFrame:
+    """A small round-robin-ish history among 4 teams with fixed dates."""
+    teams = ["A", "B", "C", "D"]
+    rng = np.random.default_rng(42)
+    rows, date = [], pd.Timestamp("2000-01-01")
+    for _ in range(n_per_pair):
+        for h in teams:
+            for a in teams:
+                if h == a:
+                    continue
+                date += pd.Timedelta(days=7)
+                hs, as_ = int(rng.integers(0, 4)), int(rng.integers(0, 4))
+                rows.append({
+                    "date": date, "home_team": h, "away_team": a,
+                    "home_score": hs, "away_score": as_,
+                    "tournament": "Friendly", "city": "X", "country": "X", "neutral": False,
+                })
+    return pd.DataFrame(rows)
+
+
+# --------------------------------------------------------------------------- #
+# Elo
+# --------------------------------------------------------------------------- #
+def test_goal_diff_multiplier():
+    assert elo.goal_diff_multiplier(1) == 1.0
+    assert elo.goal_diff_multiplier(2) == 1.5
+    assert elo.goal_diff_multiplier(3) == 1.75
+    assert elo.goal_diff_multiplier(5) == pytest.approx(1.75 + 2 / 8)
+
+
+def test_k_for_tournament():
+    assert elo.k_for_tournament("Friendly") == elo.K_FRIENDLY
+    assert elo.k_for_tournament("FIFA World Cup") == elo.K_WORLD_CUP
+    assert elo.k_for_tournament("FIFA World Cup qualification") == elo.K_QUALIFIER
+    assert elo.k_for_tournament("UEFA Euro") == elo.K_CONTINENTAL
+
+
+def test_elo_home_advantage_and_first_match():
+    df = pd.DataFrame([{
+        "date": pd.Timestamp("2020-01-01"), "home_team": "A", "away_team": "B",
+        "home_score": 1, "away_score": 1, "tournament": "Friendly",
+        "city": "x", "country": "x", "neutral": False,
+    }])
+    out, _ = elo.compute_elo(df)
+    # Both start at default; expected home > 0.5 purely from home advantage.
+    assert out.loc[0, "elo_home"] == elo.DEFAULT_RATING
+    assert out.loc[0, "elo_expected_home"] > 0.5
+
+
+def test_elo_is_as_of_no_leakage():
+    """A team's pre-match Elo at match k must equal its post-match Elo from match k-1."""
+    res = _synthetic_results()
+    out, _ = elo.compute_elo(res)
+    out = out.sort_values("date").reset_index(drop=True)
+    for team in ["A", "B", "C", "D"]:
+        appears = out[(out.home_team == team) | (out.away_team == team)]
+        prev_post = None
+        for _, r in appears.iterrows():
+            pre = r["elo_home"] if r["home_team"] == team else r["elo_away"]
+            if prev_post is not None:
+                assert pre == pytest.approx(prev_post), "Elo leaked across matches"
+            prev_post = r["elo_home_post"] if r["home_team"] == team else r["elo_away_post"]
+
+
+# --------------------------------------------------------------------------- #
+# Features
+# --------------------------------------------------------------------------- #
+def test_build_features_form_is_as_of():
+    res = _synthetic_results()
+    res = clean.load_clean_results.__wrapped__ if hasattr(clean.load_clean_results, "__wrapped__") else None
+    # Build a cleaned frame directly (bypass file IO).
+    m = _synthetic_results()
+    m["date"] = pd.to_datetime(m["date"])
+    m["played"] = True
+    m["margin"] = m["home_score"] - m["away_score"]
+    m["total_goals"] = m["home_score"] + m["away_score"]
+    m["result"] = np.where(m.margin > 0, "H", np.where(m.margin < 0, "A", "D"))
+    m["year"] = m["date"].dt.year
+    with_elo, _ = elo.compute_elo(m)
+    feat = features.build_features(with_elo)
+
+    # The very first match in the dataset has no prior games for either side -> form NaN.
+    first = feat.sort_values("date").iloc[0]
+    assert pd.isna(first["home_form_ppg_5"]), "form should be undefined before any match (as-of)"
+    # Feature table is one row per match.
+    assert len(feat) == len(m)
+    # Diff columns exist.
+    assert "form_ppg_5_diff" in feat.columns
+    assert "elo_diff" in feat.columns
+
+
+def test_feature_columns_excludes_targets():
+    m = _synthetic_results()
+    m["date"] = pd.to_datetime(m["date"]); m["played"] = True
+    m["result"] = "H"; m["margin"] = 1; m["total_goals"] = 1; m["year"] = 2000
+    with_elo, _ = elo.compute_elo(m)
+    feat = features.build_features(with_elo)
+    fc = features.feature_columns(feat)
+    for leak in ["home_score", "away_score", "result", "margin", "total_goals"]:
+        assert leak not in fc
+
+
+# --------------------------------------------------------------------------- #
+# Splits & simulator
+# --------------------------------------------------------------------------- #
+def test_time_split_is_chronological():
+    m = _synthetic_results()
+    m["date"] = pd.to_datetime(m["date"]); m["played"] = True
+    train, test = datasets.time_split(m, "2000-03-01")
+    assert train["date"].max() < pd.Timestamp("2000-03-01") <= test["date"].min()
+
+
+def test_tournament_simulation_runs():
+    groups = pd.DataFrame({
+        "group": ["A"] * 4 + ["B"] * 4,
+        "team": ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"],
+    })
+    ratings = {t: 1500 + 50 * i for i, t in enumerate(groups["team"])}
+    model = tournament.EloMatchModel(ratings)
+    odds = tournament.simulate_tournament(groups, model, ratings, n_sims=200, seed=1)
+    assert len(odds) == 8
+    assert (odds["advance"] <= 1.0).all() and (odds["Winner"] >= 0).all()
+    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.05)  # exactly one winner per sim

@@ -1,0 +1,70 @@
+# Data sources for the World Cup predictor.
+# Everything here is fetched by `python scripts/01_download.py` and cached in data/raw/.
+# No API keys are required for the CORE tier. The ADVANCED tier (squad value / injuries)
+# scrapes Transfermarkt and is rate-limited + ToS-sensitive — keep it polite.
+
+core:
+  # THE base table: every international match since 1872 — friendlies, ALL qualifiers,
+  # every continental + World Cup match. ~48k rows. CC0 license. This single switch
+  # (from "World Cup matches only" to "all internationals") is what fixes the missing
+  # qualification/form data in the reference projects.
+  results:
+    url: https://raw.githubusercontent.com/martj42/international_results/master/results.csv
+    columns: [date, home_team, away_team, home_score, away_score, tournament, city, country, neutral]
+  goalscorers:
+    url: https://raw.githubusercontent.com/martj42/international_results/master/goalscorers.csv
+    columns: [date, home_team, away_team, team, scorer, minute, own_goal, penalty]
+  shootouts:
+    url: https://raw.githubusercontent.com/martj42/international_results/master/shootouts.csv
+    columns: [date, home_team, away_team, winner, first_shooter]
+  former_names:
+    url: https://raw.githubusercontent.com/martj42/international_results/master/former_names.csv
+    columns: [current, former, start_date, end_date]
+
+  # FIFA Men's World Ranking, monthly, since 1992. Used as a feature (merge-asof by date).
+  # Two mirrors; the loader tries them in order.
+  fifa_ranking:
+    urls:
+      - https://raw.githubusercontent.com/Dato-Futbol/fifa-ranking/master/ranking_fifa_historical.csv
+      # cnc8 mirror's path changes per year and currently 404s; re-add a working URL if you find one.
+      # - https://raw.githubusercontent.com/cnc8/fifa-world-ranking/main/fifa_ranking-2024.csv
+    note: >
+      This mirror runs through ~2024 — fine for training/backtests. For a LIVE 2026 forecast,
+      refresh the latest ranking by hand from fifa.com/fifa-world-ranking (it's only a secondary feature).
+
+elo:
+  # We compute World-Football-Elo IN-HOUSE from the results table (src/wcpred/elo.py),
+  # so there is no external dependency and no leakage risk (Elo is strictly as-of).
+  # Optional external cross-check below.
+  external_crosscheck:
+    eloratings_kaggle: https://www.kaggle.com/datasets/saifalnimri/international-football-elo-ratings
+    eloratings_site: https://eloratings.net/    # thin SPA over TSV; polite GETs only
+
+advanced:
+  # Squad strength + availability. Coverage is modern only (~2007+ for ratings; current
+  # for injuries). Used for the 2026 prediction layer and the "modern subset" experiments
+  # in notebooks/02_feature_signal.ipynb — NOT for the full 1872+ backtest.
+  squad_market_value:
+    source: transfermarkt
+    base: https://www.transfermarkt.com
+    note: Per-national-team squad market value + per-player value. Scraper in src/wcpred/squad.py.
+  injuries:
+    source: transfermarkt
+    path_hint: /verein/{team_id}/kader  (current squad incl. injury markers)
+    note: Current injury list only. Weight missing players by their market value / rating.
+  player_ratings:
+    source: ea_fc_sofifa
+    note: >
+      EA Sports FC / FIFA video-game player ratings, aggregated to national-team squad
+      strength per year. Several Kaggle mirrors exist (search "FIFA players dataset").
+      Only meaningful from ~2007 onward.
+
+tournament_2026:
+  groups_csv: config/groups_2026.csv        # the real Dec 2025 final draw (VERIFY vs FIFA)
+  start_date: 2026-06-11
+  final_date: 2026-07-19
+  format:
+    teams: 48
+    groups: 12
+    advance: "top 2 of each group + 8 best third-placed -> round of 32"
+    knockout: "R32 -> R16 -> QF -> SF -> Final (extra time + penalties if level)"
