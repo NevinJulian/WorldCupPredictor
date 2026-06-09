@@ -12,9 +12,13 @@ Two models live here:
     correlation correction. It produces a full scoreline distribution, so it both derives
     H/D/A probabilities AND satisfies the simulator's `sample_scoreline` interface.
 
-`walk_forward_elo_baseline` / `walk_forward_dixon_coles` fit and score each the only way we
-evaluate anything here — time-based, training strictly before each World Cup (see
-datasets.walk_forward_tournaments) — returning the per-tournament normalized RPS.
+    GBMOutcomeModel — the **ML outcome classifier** (PLAN.md §5): gradient-boosted multiclass
+    H/D/A on the full feature_columns() set, isotonic-calibrated on a time-based inner split.
+    The first model aimed squarely at beating the Elo bar.
+
+`walk_forward_*` helpers fit and score each model the only way we evaluate anything here —
+time-based, training strictly before each World Cup (see datasets.walk_forward_tournaments)
+— returning the per-tournament normalized RPS.
 """
 from __future__ import annotations
 
@@ -22,9 +26,13 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 from scipy.special import gammaln
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.frozen import FrozenEstimator
 from sklearn.linear_model import LogisticRegression
 
 from . import datasets, metrics
+from .features import feature_columns
 
 # The baseline's entire feature set. Order matters only for the design matrix layout.
 BASELINE_FEATURES: tuple[str, ...] = ("elo_diff", "neutral")
@@ -278,6 +286,108 @@ def walk_forward_dixon_coles(
     rows: list[dict] = []
     for year, train, test in datasets.walk_forward_tournaments(df, years):
         model = DixonColesModel(**model_kwargs).fit(train)
+        proba = model.predict_proba(test)
+        y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
+        rows.append({"year": year, "n": int(len(test)), "rps": metrics.rps(proba, y_true)})
+    return rows
+
+
+# --------------------------------------------------------------------------- #
+# Gradient-boosted outcome model
+# --------------------------------------------------------------------------- #
+# Context / fatigue / host columns are kept in the pipeline for the 2026 layer but excluded
+# from the model inputs: `is_host` is constant-0 across history (hosts default to empty when
+# the historical table is built), and rest/congestion add noise more than signal here.
+_GBM_DROP_KEYS: tuple[str, ...] = ("rest_days", "matches_30d", "is_host")
+
+
+def gbm_feature_columns(df: pd.DataFrame) -> list[str]:
+    """The model-input columns for the GBM: the full feature set minus rest/context/host.
+
+    Starts from features.feature_columns(df) (the leakage gate — drops targets, identifiers
+    and object columns) and keeps the absolute home_*/away_*, *_diff and 5/10-match form
+    windows, i.e. NOT a diff-only subset.
+    """
+    return [c for c in feature_columns(df) if not any(k in c for k in _GBM_DROP_KEYS)]
+
+
+class GBMOutcomeModel:
+    """Gradient-boosted multiclass H/D/A model on the full feature set, isotonic-calibrated.
+
+    Uses HistGradientBoostingClassifier — it handles NaNs natively, which matters because the
+    rank features are ~45% NaN before 1992 and rolling form is NaN for a team's first matches;
+    no imputation (hence no imputation-leakage) is needed.
+
+    Probabilities are isotonic-calibrated on a **time-based inner split**: the booster trains
+    on the older ``1 - calib_fraction`` of the training window and the per-class isotonic
+    calibrators are fit on the most recent ``calib_fraction`` (held out, but still strictly
+    before the test tournament — no leakage). The booster is frozen before calibration so the
+    calibrator never refits it.
+
+    Feature inputs are gbm_feature_columns(): the full feature_columns() set (absolute
+    home_*/away_*, *_diff, 5/10-match form windows) minus rest/context/host.
+    """
+
+    def __init__(
+        self,
+        calib_fraction: float = 0.2,
+        learning_rate: float = 0.05,
+        max_iter: int = 600,
+        max_leaf_nodes: int = 15,
+        min_samples_leaf: int = 80,
+        l2_regularization: float = 1.0,
+        random_state: int = 0,
+        **hgb_kwargs,
+    ):
+        self.calib_fraction = calib_fraction
+        self.random_state = random_state
+        self.hgb_params = dict(
+            learning_rate=learning_rate, max_iter=max_iter, max_leaf_nodes=max_leaf_nodes,
+            min_samples_leaf=min_samples_leaf, l2_regularization=l2_regularization,
+            random_state=random_state, **hgb_kwargs,
+        )
+        self.feature_cols_: list[str] = []
+        self.calibrated_: "CalibratedClassifierCV | None" = None
+
+    def fit(self, df: pd.DataFrame) -> "GBMOutcomeModel":
+        d = df.sort_values("date", kind="stable").reset_index(drop=True)
+        self.feature_cols_ = gbm_feature_columns(d)
+        X = d[self.feature_cols_].to_numpy(dtype=float)
+        y = d["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
+
+        # Time-based inner split: oldest rows train the booster, newest calibrate it.
+        cut = min(max(int(round(len(d) * (1.0 - self.calib_fraction))), 1), len(d) - 1)
+        base = HistGradientBoostingClassifier(**self.hgb_params)
+        base.fit(X[:cut], y[:cut])
+        self.calibrated_ = CalibratedClassifierCV(
+            FrozenEstimator(base), method="isotonic"
+        ).fit(X[cut:], y[cut:])
+        return self
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        """Return an (n, 3) array of P(H/D/A), columns in H,D,A order (matches RESULT_TO_INT)."""
+        if self.calibrated_ is None:
+            raise RuntimeError("GBMOutcomeModel is not fitted.")
+        X = df[self.feature_cols_].to_numpy(dtype=float)
+        proba = self.calibrated_.predict_proba(X)
+        full = np.zeros((len(df), 3), dtype=float)
+        for j, c in enumerate(self.calibrated_.classes_):
+            full[:, int(c)] = proba[:, j]
+        s = full.sum(axis=1, keepdims=True)
+        return np.divide(full, s, out=np.full_like(full, 1.0 / 3.0), where=s > 0)
+
+
+def walk_forward_gbm_outcome(
+    df: pd.DataFrame, years: tuple[int, ...] = DEFAULT_WC_YEARS, **model_kwargs
+) -> list[dict]:
+    """Fit the GBM outcome model per World Cup (train strictly before) and score normalized RPS.
+
+    Mirrors the other walk_forward_* helpers: time-based via datasets.walk_forward_tournaments,
+    scored with metrics.rps. Returns one dict per tournament: ``{"year", "n", "rps"}``.
+    """
+    rows: list[dict] = []
+    for year, train, test in datasets.walk_forward_tournaments(df, years):
+        model = GBMOutcomeModel(**model_kwargs).fit(train)
         proba = model.predict_proba(test)
         y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
         rows.append({"year": year, "n": int(len(test)), "rps": metrics.rps(proba, y_true)})
