@@ -134,7 +134,7 @@ def test_tournament_simulation_runs():
     })
     ratings = {t: 1500 + 50 * i for i, t in enumerate(groups["team"])}
     model = tournament.EloMatchModel(ratings)
-    odds = tournament.simulate_tournament(groups, model, ratings, n_sims=200, seed=1)
+    odds = tournament.simulate_tournament(groups, model, n_sims=200, seed=1)
     assert len(odds) == 8
     assert (odds["advance"] <= 1.0).all() and (odds["Winner"] >= 0).all()
     assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.05)  # exactly one winner per sim

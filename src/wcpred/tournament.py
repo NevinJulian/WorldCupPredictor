@@ -8,8 +8,8 @@ Format encoded: 12 groups of 4 -> top 2 + 8 best third-placed -> R32 -> ... -> F
 
 NOTE on the bracket: group-stage and "advance" probabilities are correct. The exact R32
 slotting of the 8 third-placed teams follows FIFA's Annex-C table (495 combinations) and is
-approximated here by Elo-seeding the 32 qualifiers into a standard bracket. Finalise this
-mapping before trusting deep-run / title odds. See PLAN.md §6.
+approximated here by seeding the 32 qualifiers (by ``model.team_strength``) into a standard
+bracket. Finalise this mapping before trusting deep-run / title odds. See PLAN.md §6.
 """
 from __future__ import annotations
 
@@ -33,9 +33,14 @@ class EloMatchModel:
     base_goals: float = 1.35     # avg goals per team
     elo_scale: float = 0.0029    # supremacy sensitivity to Elo diff (~1.16/400)
     home_adv: float = 65.0       # Elo points; 0 effectively for neutral games
+    strength_scale: float = 400.0  # Elo points; the eloratings logistic denominator
 
     def default_rating(self) -> float:
         return float(np.median(list(self.ratings.values()))) if self.ratings else 1500.0
+
+    def team_strength(self, team: str) -> float:
+        """The team's Elo rating — the match-model interface used for seeding/tiebreaks."""
+        return float(self.ratings.get(team, self.default_rating()))
 
     def lambdas(self, home: str, away: str, neutral: bool = True) -> tuple[float, float]:
         rh = self.ratings.get(home, self.default_rating())
@@ -92,13 +97,15 @@ def _standard_seed_order(size: int) -> list[int]:
     return seeds
 
 
-def _knockout(qualifiers: list[str], model, rng, ratings: dict) -> dict[str, int]:
-    """Elo-seeded single elimination, robust to non-power-of-2 fields (top seeds get byes).
+def _knockout(qualifiers: list[str], model, rng) -> dict[str, int]:
+    """Strength-seeded single elimination, robust to non-power-of-2 fields (top seeds get byes).
 
-    Returns team -> furthest round SIZE reached: 32 = lost in the round of 32, 16 = reached
-    the round of 16, ... , 2 = reached the final, 1 = champion.
+    Seeding and the shootout tiebreak both read ``model.team_strength`` (the match-model
+    interface), so the simulator no longer needs a separate Elo ratings dict. Returns
+    team -> furthest round SIZE reached: 32 = lost in the round of 32, 16 = reached the
+    round of 16, ... , 2 = reached the final, 1 = champion.
     """
-    seeded = sorted(qualifiers, key=lambda t: ratings.get(t, 1500.0), reverse=True)
+    seeded = sorted(qualifiers, key=model.team_strength, reverse=True)
     n = len(seeded)
     if n <= 1:
         return {t: 1 for t in seeded}
@@ -119,7 +126,9 @@ def _knockout(qualifiers: list[str], model, rng, ratings: dict) -> dict[str, int
                 continue
             ga, gb = model.sample_scoreline(a, b, neutral=True, rng=rng)
             if ga == gb:  # extra time + shootout ~ strength-weighted coin flip
-                pa = 1.0 / (1.0 + 10 ** (-(ratings.get(a, 1500) - ratings.get(b, 1500)) / 400))
+                scale = getattr(model, "strength_scale", 400.0)
+                delta = model.team_strength(a) - model.team_strength(b)
+                pa = 1.0 / (1.0 + 10 ** (-delta / scale))
                 winner = a if rng.random() < pa else b
             else:
                 winner = a if ga > gb else b
@@ -132,9 +141,14 @@ def _knockout(qualifiers: list[str], model, rng, ratings: dict) -> dict[str, int
 
 
 def simulate_tournament(
-    groups: pd.DataFrame, model, ratings: dict, n_sims: int = 10000, seed: int = 0
+    groups: pd.DataFrame, model, n_sims: int = 10000, seed: int = 0
 ) -> pd.DataFrame:
-    """Run the Monte-Carlo and return per-team advancement/title probabilities."""
+    """Run the Monte-Carlo and return per-team advancement/title probabilities.
+
+    `model` is any object implementing the match-model interface: ``sample_scoreline`` for
+    goals and ``team_strength`` (+ optional ``strength_scale``) for knockout seeding and the
+    shootout tiebreak.
+    """
     rng = np.random.default_rng(seed)
     group_names = sorted(groups["group"].unique())
     group_teams = {g: groups.loc[groups["group"] == g, "team"].tolist() for g in group_names}
@@ -159,7 +173,7 @@ def simulate_tournament(
         for t in qualifiers:
             counts[t]["advance"] += 1
 
-        reached = _knockout(qualifiers, model, rng, ratings)  # team -> round size reached
+        reached = _knockout(qualifiers, model, rng)  # team -> round size reached
         for t, sz in reached.items():
             if sz <= 16:
                 counts[t]["R16"] += 1
