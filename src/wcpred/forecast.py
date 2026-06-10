@@ -21,12 +21,17 @@ played history only. Deep-run / title odds remain PROVISIONAL — the knockout b
 """
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
 
 from . import clean, datasets, elo, features
 from .models import EnsembleModel
 from .tournament import load_groups
+
+# Elo points -> natural log-odds (the standard Elo logistic), for the strength-shock tilt.
+_ELO_LOGIT = math.log(10.0) / 400.0
 
 # groups_2026 display name -> data (martj42) spelling, for the few that differ. The rest
 # (South Korea, Cape Verde, Curaçao, DR Congo, ...) already match the data spelling directly.
@@ -163,14 +168,44 @@ class ForecastMatchModel:
     interface, so it drops straight into `simulate_tournament`.
     """
 
-    def __init__(self, matrices: dict, strengths: dict, strength_scale: float = 400.0, fallback=None):
+    def __init__(self, matrices: dict, strengths: dict, strength_scale: float = 400.0,
+                 fallback=None, rating_sigma: float = 0.0):
         self.matrices = matrices
         self.strengths = strengths
         self.strength_scale = strength_scale
         self._fallback = fallback   # a DixonColesModel, for pairs outside the precomputed set
+        # Per-team rating-uncertainty SD in Elo points for the strength-shock dispersion lever.
+        # 0 = off (the default): the WC backtest does not support it — the per-match model is
+        # under-, not over-confident — see reports/sim_dispersion_2026.md.
+        self.rating_sigma = float(rating_sigma)
+        self._shock: dict | None = None
 
     def team_strength(self, team: str) -> float:
         return float(self.strengths.get(team, 0.0))
+
+    def begin_tournament(self, rng) -> None:
+        """Draw one correlated strength shock per team for this simulated tournament.
+
+        With ``rating_sigma > 0`` each team's rating is perturbed by ``e_t ~ N(0, sigma^2)``
+        ONCE per tournament — so a team sampled weak runs weak across all its matches — which
+        widens the title distribution by construction. `simulate_tournament` calls this at the
+        start of every simulation; at ``rating_sigma == 0`` it is a no-op.
+        """
+        self._shock = ({t: float(rng.normal(0.0, self.rating_sigma)) for t in self.strengths}
+                       if self.rating_sigma > 0 else None)
+
+    def _tilt(self, M: np.ndarray, delta: float) -> np.ndarray:
+        """Shift non-draw mass between home and away by supremacy `delta` (nat log-odds)."""
+        G = M.shape[0]
+        tl = np.tril(np.ones((G, G)), -1)
+        tu = np.triu(np.ones((G, G)), 1)
+        pH, pA = (M * tl).sum(), (M * tu).sum()
+        if pH <= 0 or pA <= 0:
+            return M
+        w = 1.0 / (1.0 + np.exp(-(np.log(pH / pA) + delta)))   # new home win-share of non-draw mass
+        nd = pH + pA
+        R = M * (1.0 + tl * (nd * w / pH - 1.0) + tu * (nd * (1.0 - w) / pA - 1.0))
+        return R / R.sum()
 
     def sample_scoreline(self, home, away, neutral=True, rng=None) -> tuple[int, int]:
         rng = rng or np.random.default_rng()
@@ -179,6 +214,10 @@ class ForecastMatchModel:
             if self._fallback is not None:
                 return self._fallback.sample_scoreline(home, away, neutral, rng)
             return int(rng.poisson(1.3)), int(rng.poisson(1.3))
+        if self._shock is not None:   # strength-shock dispersion lever (off by default)
+            delta = _ELO_LOGIT * (self._shock.get(home, 0.0) - self._shock.get(away, 0.0))
+            if delta != 0.0:
+                M = self._tilt(M, delta)
         cdf = np.cumsum(M.ravel())
         idx = int(np.searchsorted(cdf, rng.random() * cdf[-1]))
         ncols = M.shape[1]
@@ -193,8 +232,12 @@ def build_forecast_model(
     ranking: pd.DataFrame | None = None,
     groups: pd.DataFrame | None = None,
     ensemble_kwargs: dict | None = None,
+    rating_sigma: float = 0.0,
 ):
     """Fit the ensemble on all played data and assemble the 2026 `ForecastMatchModel`.
+
+    ``rating_sigma`` (Elo) turns on the per-tournament strength-shock dispersion lever; it is
+    0 (off) by default because the backtest does not support it (reports/sim_dispersion_2026.md).
 
     Returns ``(model, sim_groups, display_to_data, info)``:
       * ``model``            — the ForecastMatchModel for `simulate_tournament`.
@@ -249,7 +292,8 @@ def build_forecast_model(
     strengths = {t: float(ratings.get(t, default_elo)) + ELO_PER_DC_UNIT * dc.team_strength(t)
                  for t in teams}
 
-    model = ForecastMatchModel(matrices, strengths, strength_scale=400.0, fallback=dc)
+    model = ForecastMatchModel(matrices, strengths, strength_scale=400.0, fallback=dc,
+                               rating_sigma=rating_sigma)
     sim_groups = g.assign(team=g["team_data"])
     display_to_data = dict(zip(g["team_data"], g["team"]))
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),

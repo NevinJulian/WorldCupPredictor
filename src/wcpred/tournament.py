@@ -207,7 +207,10 @@ def simulate_tournament(
     counts = {t: {k: 0 for k in ["win_group", "runner_up", "advance",
                                  "R16", "QF", "SF", "Final", "Winner"]} for t in teams}
 
+    begin = getattr(model, "begin_tournament", None)   # optional per-sim hook (strength shocks)
     for _ in range(n_sims):
+        if begin is not None:
+            begin(rng)
         winners, runners, thirds = {}, {}, []
         for g in group_names:
             table = _simulate_group(group_teams[g], model, rng)
