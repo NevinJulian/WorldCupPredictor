@@ -368,6 +368,80 @@ def fixture_goal_model(model, home: str, away: str) -> dict:
     }
 
 
+def top_scorelines(M: np.ndarray, k: int = 3) -> list[tuple[tuple[int, int], float]]:
+    """The k most-likely scorelines as ``[((home, away), prob), ...]``, probability-descending."""
+    flat = M.ravel()
+    ncols = M.shape[1]
+    order = np.argsort(flat)[::-1][:k]
+    return [((int(i // ncols), int(i % ncols)), float(flat[i])) for i in order]
+
+
+def fixture_scoreline_distribution(model, home: str, away: str, top_k: int = 3) -> dict:
+    """Exact scoreline distribution for a fixture — no simulation.
+
+    Adds the modal scoreline and the top-k scorelines with probabilities to `fixture_goal_model`,
+    all read from the fixture's score matrix. Because every Monte-Carlo draw samples from that
+    matrix, these probabilities are exactly the N->infinity bucket frequencies; the modal scoreline
+    equals the score-matrix argmax (i.e. `most_likely`).
+    """
+    fg = fixture_goal_model(model, home, away)
+    top = top_scorelines(model.matrices[(home, away)], top_k)
+    return {**fg, "modal": top[0][0], "top": top}
+
+
+def expected_group_points(model, fixtures) -> dict[str, float]:
+    """E[group points] per team from the fixtures' score matrices (deterministic, host-aware)."""
+    pts: dict[str, float] = {}
+    for home, away in fixtures:
+        M = model.matrices[(home, away)]
+        pH, pD, pA = float(np.tril(M, -1).sum()), float(np.trace(M)), float(np.triu(M, 1).sum())
+        pts[home] = pts.get(home, 0.0) + 3 * pH + pD
+        pts[away] = pts.get(away, 0.0) + 3 * pA + pD
+    return pts
+
+
+def chalk_bracket(model, group_teams: dict, fixtures_by_group: dict) -> dict:
+    """The deterministic 'chalk' path — NOT a probability.
+
+    Group order is by expected group points (host-aware); the top two of each group plus the 8
+    third-placed teams with the most expected points qualify; Annex C fixes the R32; then in every
+    knockout tie the team with the higher head-to-head win probability advances, shown with that
+    tie's modal scoreline. Fully deterministic (no RNG).
+    """
+    epts_all, winners, runners, thirds_team, third_epts = {}, {}, {}, {}, {}
+    for g, teams in group_teams.items():
+        epts = expected_group_points(model, fixtures_by_group[g])
+        epts_all.update(epts)
+        order = sorted(teams, key=lambda t: epts[t], reverse=True)
+        winners[g], runners[g], thirds_team[g] = order[0], order[1], order[2]
+        third_epts[g] = epts[order[2]]
+    best_groups = sorted(third_epts, key=lambda g: third_epts[g], reverse=True)[:8]
+    third_by_group = {g: thirds_team[g] for g in best_groups}
+
+    def advance(a, b):
+        M = model.matrices[(a, b)]
+        pa, pb = float(np.tril(M, -1).sum()), float(np.triu(M, 1).sum())
+        (x, y), _ = top_scorelines(M, 1)[0]
+        return (a if pa >= pb else b), (x, y), pa, pb
+
+    bracket, field = [], []
+    for a, b in r32_matchups(winners, runners, third_by_group):
+        w, modal, pa, pb = advance(a, b)
+        field.append(w)
+        bracket.append(("R32", a, b, modal, w, pa, pb))
+    for name in ("R16", "QF", "SF", "Final"):
+        nxt = []
+        for i in range(0, len(field), 2):
+            a, b = field[i], field[i + 1]
+            w, modal, pa, pb = advance(a, b)
+            nxt.append(w)
+            bracket.append((name, a, b, modal, w, pa, pb))
+        field = nxt
+    return {"winners": winners, "runners": runners, "best_thirds": sorted(best_groups),
+            "third_by_group": third_by_group, "bracket": bracket, "champion": field[0],
+            "expected_points": epts_all}
+
+
 def _play_traced(model, a: str, b: str, rng) -> tuple[int, int, str, bool]:
     """One knockout tie -> (home_goals, away_goals, winner, went_to_shootout)."""
     gh, ga = model.sample_scoreline(a, b, neutral=True, rng=rng)
