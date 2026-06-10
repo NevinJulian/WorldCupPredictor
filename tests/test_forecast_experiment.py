@@ -6,6 +6,8 @@ scenario is a complete, internally-consistent single realization. Run: `pytest -
 """
 import pathlib
 import sys
+from collections import Counter
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
@@ -94,3 +96,61 @@ def test_simulate_traced_is_a_complete_realization():
     # every knockout winner is one of the two teams in its tie
     for _, a, b, _, _, w, _ in sc["bracket"]:
         assert w in (a, b)
+
+
+# --------------------------------------------------------------------------- #
+# Scoreline distributions + deterministic chalk bracket
+# --------------------------------------------------------------------------- #
+def test_top_scorelines_descending_and_modal_is_argmax():
+    M = np.array([[0.30, 0.10, 0.02], [0.20, 0.15, 0.03], [0.10, 0.05, 0.05]])
+    M = M / M.sum()
+    model = forecast.ForecastMatchModel({("X", "Y"): M}, {})
+    d = forecast.fixture_scoreline_distribution(model, "X", "Y", top_k=3)
+    probs = [p for _, p in d["top"]]
+    assert probs == sorted(probs, reverse=True)              # top-3 probabilities descending
+    assert d["modal"] == (0, 0)                              # matrix argmax
+    assert d["top"][0][0] == d["modal"]
+
+
+def test_modal_bucket_matches_matrix_argmax():
+    M = np.array([[0.30, 0.10, 0.02], [0.20, 0.15, 0.03], [0.10, 0.05, 0.05]])
+    M = M / M.sum()
+    model = forecast.ForecastMatchModel({("X", "Y"): M}, {})
+    rng = np.random.default_rng(0)
+    counts = Counter(model.sample_scoreline("X", "Y", rng=rng) for _ in range(20000))
+    modal_bucket = counts.most_common(1)[0][0]
+    assert modal_bucket == forecast.fixture_scoreline_distribution(model, "X", "Y")["modal"]
+
+
+def _synthetic_chalk_model():
+    teams = [f"T{i}" for i in range(48)]
+    idx = {t: i for i, t in enumerate(teams)}
+    base = np.ones((4, 4)) / 16.0
+    mats = {}
+    for a in teams:
+        for b in teams:
+            if a == b:
+                continue
+            pa = 1.0 / (1.0 + 10 ** (-(idx[a] - idx[b]) * 0.06))   # stronger (higher idx) favoured
+            pd_ = 0.22
+            mats[(a, b)] = forecast.reweight_to_outcome(base, (pd_ * 0 + (1 - pd_) * pa, pd_, (1 - pd_) * (1 - pa)))
+    model = forecast.ForecastMatchModel(mats, {t: 1500.0 + idx[t] * 8 for t in teams})
+    groups = {chr(ord("A") + i): teams[i * 4:i * 4 + 4] for i in range(12)}
+    fbg = {g: list(combinations(ts, 2)) for g, ts in groups.items()}
+    return model, groups, fbg, idx
+
+
+def test_chalk_bracket_is_deterministic_and_favourites_advance():
+    model, groups, fbg, idx = _synthetic_chalk_model()
+    ch = forecast.chalk_bracket(model, groups, fbg)
+    # deterministic: a second call is identical
+    assert forecast.chalk_bracket(model, groups, fbg)["bracket"] == ch["bracket"]
+    assert len(ch["best_thirds"]) == 8
+    counts = {r: sum(1 for t in ch["bracket"] if t[0] == r) for r in ("R32", "R16", "QF", "SF", "Final")}
+    assert counts == {"R32": 16, "R16": 8, "QF": 4, "SF": 2, "Final": 1}
+    # in every tie the higher-strength (= higher win-prob) team advances
+    for _, a, b, _, w, pa, pb in ch["bracket"]:
+        assert idx[w] == max(idx[a], idx[b])
+        assert (w == a) == (pa >= pb)
+    # the strongest team holds chalk all the way to the title
+    assert ch["champion"] == "T47"
