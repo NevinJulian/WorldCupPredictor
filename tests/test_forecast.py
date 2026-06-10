@@ -157,7 +157,8 @@ def test_build_forecast_model_end_to_end():
             if a != b:
                 assert (a, b) in model.matrices
     assert 0.0 <= info["ensemble_weight"] <= 1.0
-    odds = tournament.simulate_tournament(sim_groups, model, n_sims=120, seed=0)
-    assert len(odds) == 8
-    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.05)
-    assert (odds["advance"] <= 1.0).all()
+    # The assembled model satisfies the simulator's match-model interface (the real 12-group
+    # Annex-C simulation itself is covered in test_tournament.py).
+    gh, ga = model.sample_scoreline(teams[0], teams[1], neutral=True, rng=np.random.default_rng(0))
+    assert gh >= 0 and ga >= 0
+    assert isinstance(model.team_strength(teams[0]), float)
