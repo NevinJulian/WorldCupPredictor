@@ -8,12 +8,13 @@ An ML pipeline to predict international football matches and Monte-Carlo the **F
 
 ## Current status
 
-**M0 (foundation) is complete and verified.** What exists:
+**M0–M4 are complete and verified — the pipeline produces a real WC 2026 forecast.** What exists:
 - End-to-end pipeline: `01_download` → raw CSVs; `02_build_features` → `data/processed/match_features.parquet` (**49,445 matches, 49 features** incl. as-of Elo, rolling form, rest/congestion, confederation/host flags, FIFA rank). Guard tests pass.
-- EDA notebooks 01–03 have been run (data overview, feature-signal, Elo baseline + RPS/calibration harness).
-- 2026 groups encoded in `config/groups_2026.csv` (verify vs fifa.com); the Elo-baseline tournament sim runs.
+- **Models** (`src/wcpred/models.py`) scored via `walk_forward_tournaments` over 2010–2022 (normalized RPS, lower is better): Elo-logistic baseline (the bar, **0.2045**), Dixon-Coles goals (0.2147), GBM H/D/A isotonic-calibrated (**0.2030**), and their ensemble (**0.2036**). Metrics in `metrics.py` (RPS / log-loss / Brier / calibration).
+- **Forecast** (`src/wcpred/forecast.py` → `scripts/08_forecast_2026.py`): Dixon-Coles scorelines reweighted to the ensemble's H/D/A, simulated through FIFA's real **Annex-C** R32 bracket (`config/annexc_r32.csv`). Output: per-team advance/round/title odds.
+- A market sanity check (`scripts/market_check_2026.py` → `reports/market_check_2026.md`): the model over-concentrates on Spain + CONMEBOL sides vs the betting market — a known open question, not a bug.
 
-**Next: M2 — baselines.** Build `src/wcpred/models.py` (Dixon-Coles goals + Elo-logistic outcome) and a metrics module (RPS / log-loss / Brier / calibration). Run `walk_forward_tournaments` over 2010–2022 and record the RPS to beat. Then M3: XGBoost goals + outcome → calibrate → ensemble. Roadmap in [PLAN.md](PLAN.md) §9.
+**Next (optional):** M3-2 (XGBoost Poisson goals as a third, differently-failing ensemble component); investigate the CONMEBOL / Elo over-rating the market check surfaced. Roadmap in [PLAN.md](PLAN.md) §9.
 
 ## Workflow (branches, issues, PRs)
 
@@ -34,6 +35,8 @@ pip install -r requirements.txt
 python scripts/01_download.py              # core data -> data/raw/ (no API key; add --advanced to scrape Transfermarkt)
 python scripts/02_build_features.py        # -> data/processed/match_features.parquet (+ current_elo.csv, sample CSV)
 python scripts/03_make_2026.py [--sims N]  # -> wc2026_group_fixtures.csv, wc2026_odds.csv (Elo-baseline forecast)
+python scripts/08_forecast_2026.py [--sims N]  # -> wc2026_forecast_odds.csv (the real forecast: ensemble + Annex-C bracket)
+# scripts 04-07 fit/score the models -> data/processed/*_rps.json; gen_annexc_table.py rebuilds config/annexc_r32.csv (needs network)
 
 # Tests (synthetic data, no network)
 pytest -q
@@ -58,7 +61,8 @@ Module map ([src/wcpred/](src/wcpred/)):
 - `elo.py` — World Football Elo computed **in-house** (eloratings.net rules). `compute_elo()` returns matches with pre-match `elo_home`/`elo_away`/`elo_diff` plus post columns. K-factor comes from the `tournament` label via `k_for_tournament()`.
 - `features.py` — `build_features(matches_with_elo, ranking, hosts)` assembles the wide modelling table. `feature_columns(df)` returns the model-input columns and is the **leakage gate** (drops targets, identifiers, and object columns).
 - `datasets.py` — train/test construction. `time_split`, `tournament_holdout(df, year)`, `walk_forward_tournaments(...)`, `xy_outcome`, `xy_goals`.
-- `tournament.py` — Monte-Carlo simulator for the 2026 format. `EloMatchModel` is a stand-in match model; `simulate_tournament(groups, model, ratings, n_sims)` returns per-team advance/round/title probabilities.
+- `tournament.py` — Monte-Carlo simulator for the 2026 format with FIFA's real **Annex-C** R32 bracket (so it requires the 12 groups A-L). `simulate_tournament(groups, model, n_sims)` returns per-team advance/round/title probabilities; `EloMatchModel` is the baseline stand-in. `load_annexc()`/`r32_matchups()` expose the bracket.
+- `forecast.py` — assembles the real 2026 forecast match model (`ForecastMatchModel`: Dixon-Coles scorelines reweighted to the ensemble's H/D/A) and feeds it to `simulate_tournament`. The group stage uses the real in-data fixtures with host advantage; knockout pairs are scored neutral from a leakage-free per-team form snapshot.
 - `confederations.py` / `squad.py` — team→confederation lookup; Transfermarkt squad-value/injury scraper (modern subset only).
 
 ### Non-negotiable invariants
@@ -73,13 +77,11 @@ The pipeline pivots between a **wide** table (one row per match, symmetric `home
 
 ### Pluggable match model
 
-The simulator depends only on a duck-typed interface: any object with
-`sample_scoreline(home, away, neutral, rng) -> (home_goals, away_goals)`.
-`EloMatchModel` implements it today as the baseline. When the real ensembled goals+outcome model (PLAN.md §5) is trained, wrap it to satisfy this signature and pass it to `simulate_tournament` — no simulator changes needed.
+The simulator depends only on a duck-typed interface: `sample_scoreline(home, away, neutral, rng) -> (home_goals, away_goals)` for goals, plus `team_strength(team) -> float` (and an optional `strength_scale`) for the knockout shootout tiebreak. `EloMatchModel` is the baseline; `forecast.ForecastMatchModel` is the trained, ensemble-backed model — both satisfy the interface, so swapping them needs no simulator changes.
 
 ### Known caveats to respect
 
-- **Team-name reconciliation is manual and scattered.** Data sources spell countries differently, so there are three separate alias maps: `features._RANK_ALIASES` (ranking↔results), `make_2026.NAME_ALIASES` (groups↔Elo), and `squad.TM_TEAMS` (Transfermarkt slugs). When adding a team or source, update the relevant map(s); unresolved names silently fall back to a median rating.
+- **Team-name reconciliation is manual and scattered.** Data sources spell countries differently, so there are separate alias maps: `features._RANK_ALIASES` (ranking↔results), `scripts/03_make_2026.NAME_ALIASES` and `forecast.GROUP_ALIASES` (groups↔data), and `squad.TM_TEAMS` (Transfermarkt slugs). When adding a team or source, update the relevant map(s); unresolved names silently fall back to a median rating.
 - **Advanced features (squad value/injuries) are modern-only and current-only.** They are for the 2026 layer and the "does this add signal?" experiment — never feed them into a pre-2007 backtest fold.
-- **The 2026 knockout bracket is approximate.** `tournament._knockout` Elo-seeds qualifiers into a standard bracket instead of FIFA's Annex-C third-place table (495 combos). Group-stage and `advance` probabilities are correct; deep-run/title odds are not final until the Annex-C mapping is implemented (PLAN.md §6).
-- **`config/groups_2026.csv` is transcribed from public reporting** — verify against fifa.com before publishing predictions.
+- **The 2026 knockout bracket is FIFA's real Annex-C slotting** (`config/annexc_r32.csv`, regenerated by `scripts/gen_annexc_table.py`; `simulate_tournament` therefore requires the 12 groups A-L). Residual approximations: knockout ties are played at neutral venues (host advantage is modelled only in the group stage), and drawn knockout ties resolve via a strength-weighted shootout.
+- **`config/groups_2026.csv` matches the actual draw** — cross-checked against the real in-data fixtures (every team + intra-group pairing). Re-verify if the data source changes before publishing predictions.
