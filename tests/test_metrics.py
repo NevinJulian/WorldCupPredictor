@@ -49,6 +49,17 @@ def test_rps_is_mean_over_matches():
     assert metrics.rps(p, y) == pytest.approx((0.145 + 0.0) / 2)
 
 
+def test_rps_per_match_returns_vector_and_means_to_rps():
+    p = [[0.5, 0.3, 0.2], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+    y = [0, 0, 0]
+    per = metrics.rps_per_match(p, y)
+    assert per.shape == (3,)
+    assert per[0] == pytest.approx(0.145)   # hand case
+    assert per[1] == pytest.approx(0.0)     # perfect confident
+    assert per[2] == pytest.approx(1.0)     # worst case
+    assert per.mean() == pytest.approx(metrics.rps(p, y))
+
+
 def test_rps_rewards_ordinal_closeness():
     # Outcome = Away. Putting the wrong mass on Draw (adjacent) must beat putting it on
     # Home (far) — this is the property log-loss/Brier can't see.

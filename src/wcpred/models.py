@@ -16,6 +16,10 @@ Two models live here:
     H/D/A on the full feature_columns() set, isotonic-calibrated on a time-based inner split.
     The first model aimed squarely at beating the Elo bar.
 
+    EnsembleModel — blends the GBM outcome probabilities with Dixon-Coles' H/D/A under a single
+    mixing weight chosen on a time-based inner validation window (never the test folds). Two
+    models that fail differently; the blend is the candidate to clear the bar with margin.
+
 `walk_forward_*` helpers fit and score each model the only way we evaluate anything here —
 time-based, training strictly before each World Cup (see datasets.walk_forward_tournaments)
 — returning the per-tournament normalized RPS.
@@ -391,4 +395,100 @@ def walk_forward_gbm_outcome(
         proba = model.predict_proba(test)
         y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
         rows.append({"year": year, "n": int(len(test)), "rps": metrics.rps(proba, y_true)})
+    return rows
+
+
+# --------------------------------------------------------------------------- #
+# Ensemble (Dixon-Coles + GBM outcome)
+# --------------------------------------------------------------------------- #
+def _inner_time_split(df: pd.DataFrame, val_fraction: float) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split a frame into (older inner-train, newer inner-val) by date — time-ordered.
+
+    The validation slice is the most recent `val_fraction` of rows; every inner-train date is
+    <= every inner-val date. Used to choose the ensemble weight without touching test data.
+    """
+    d = df.sort_values("date", kind="stable").reset_index(drop=True)
+    cut = int(round(len(d) * (1.0 - val_fraction)))
+    return d.iloc[:cut], d.iloc[cut:]
+
+
+class EnsembleModel:
+    """Blend GBM-outcome and Dixon-Coles H/D/A probabilities: ``w·p_gbm + (1-w)·p_dc``.
+
+    The two components fail differently — the GBM reads the full feature table, Dixon-Coles
+    reads the goal-scoring structure — so a convex blend is a cheap, better-calibrated win.
+
+    **The mixing weight is chosen WITHOUT touching the evaluation folds.** `fit` carves a
+    time-based inner validation window off the *end* of the training set (the most recent
+    ``inner_val_fraction``, still strictly before the test tournament): both components are fit
+    on the older inner-train slice, predict the held-out inner-val slice, and ``w`` is the grid
+    value minimising inner-val RPS. Only then are the components **refit on the full training
+    window** with that ``w`` frozen. Tuning the blend on the 2010-2022 test WCs would be
+    leakage; this never does.
+
+    Exposes the fitted components (`gbm_`, `dc_`) and `weight_` so an evaluator can read off the
+    individual model probabilities (e.g. for a paired bootstrap) without refitting.
+    """
+
+    def __init__(
+        self,
+        inner_val_fraction: float = 0.2,
+        weight_grid: "np.ndarray | None" = None,
+        gbm_kwargs: "dict | None" = None,
+        dc_kwargs: "dict | None" = None,
+    ):
+        self.inner_val_fraction = inner_val_fraction
+        self.weight_grid = np.linspace(0.0, 1.0, 101) if weight_grid is None else np.asarray(weight_grid)
+        self.gbm_kwargs = dict(gbm_kwargs or {})
+        self.dc_kwargs = dict(dc_kwargs or {})
+        self.weight_ = 0.5            # weight on the GBM component
+        self.inner_val_rps_: float | None = None
+        self.gbm_: "GBMOutcomeModel | None" = None
+        self.dc_: "DixonColesModel | None" = None
+
+    def _select_weight(self, df: pd.DataFrame) -> float:
+        """Pick w on a time-based inner-val window; fall back to 0.5 if the window is too small."""
+        inner_train, inner_val = _inner_time_split(df, self.inner_val_fraction)
+        y_val = inner_val["result"].map(datasets.RESULT_TO_INT)
+        # Need a usable inner-val window with all three outcomes to score RPS meaningfully.
+        if len(inner_train) < 20 or len(inner_val) < 10 or y_val.nunique() < 3:
+            self.inner_val_rps_ = None
+            return 0.5
+        pg = GBMOutcomeModel(**self.gbm_kwargs).fit(inner_train).predict_proba(inner_val)
+        pd_ = DixonColesModel(**self.dc_kwargs).fit(inner_train).predict_proba(inner_val)
+        y = y_val.astype(int).to_numpy()
+        scores = [metrics.rps(w * pg + (1.0 - w) * pd_, y) for w in self.weight_grid]
+        best = int(np.argmin(scores))
+        self.inner_val_rps_ = float(scores[best])
+        return float(self.weight_grid[best])
+
+    def fit(self, df: pd.DataFrame) -> "EnsembleModel":
+        self.weight_ = self._select_weight(df)              # inner-val only, no test data
+        self.gbm_ = GBMOutcomeModel(**self.gbm_kwargs).fit(df)   # refit components on full train
+        self.dc_ = DixonColesModel(**self.dc_kwargs).fit(df)
+        return self
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        if self.gbm_ is None or self.dc_ is None:
+            raise RuntimeError("EnsembleModel is not fitted.")
+        p = self.weight_ * self.gbm_.predict_proba(df) + (1.0 - self.weight_) * self.dc_.predict_proba(df)
+        return p / p.sum(axis=1, keepdims=True)
+
+
+def walk_forward_ensemble(
+    df: pd.DataFrame, years: tuple[int, ...] = DEFAULT_WC_YEARS, **ensemble_kwargs
+) -> list[dict]:
+    """Fit the ensemble per World Cup (train strictly before) and score normalized RPS.
+
+    Time-based via datasets.walk_forward_tournaments; the mixing weight is chosen on each
+    fold's inner-val window inside `EnsembleModel.fit`. Returns one dict per tournament:
+    ``{"year", "n", "rps", "weight"}``.
+    """
+    rows: list[dict] = []
+    for year, train, test in datasets.walk_forward_tournaments(df, years):
+        model = EnsembleModel(**ensemble_kwargs).fit(train)
+        proba = model.predict_proba(test)
+        y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
+        rows.append({"year": year, "n": int(len(test)),
+                     "rps": metrics.rps(proba, y_true), "weight": model.weight_})
     return rows

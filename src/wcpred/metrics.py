@@ -67,8 +67,11 @@ def _check_aligned(p: np.ndarray, labels: np.ndarray) -> None:
 # --------------------------------------------------------------------------- #
 # Metrics
 # --------------------------------------------------------------------------- #
-def rps(y_prob, y_true) -> float:
-    """Mean **normalized** Ranked Probability Score (lower is better; range 0..1).
+def rps_per_match(y_prob, y_true) -> np.ndarray:
+    """Per-match **normalized** Ranked Probability Score — the (n,) vector `rps` averages.
+
+    Exposed so paired tests (e.g. a paired bootstrap on the RPS gap between two models on
+    the same matches) can work with the un-aggregated, per-fixture scores.
 
     Parameters
     ----------
@@ -88,8 +91,20 @@ def rps(y_prob, y_true) -> float:
     # The r-th cumulative difference is always 0 (both rows sum to 1), so the standard
     # sum runs i = 1..r-1. Slicing the last column off also makes us independent of any
     # tiny float drift in the final cumulative sum. Normalize by (r - 1).
-    per_match = ((cum_p[:, :-1] - cum_o[:, :-1]) ** 2).sum(axis=1) / (r - 1)
-    return float(per_match.mean())
+    return ((cum_p[:, :-1] - cum_o[:, :-1]) ** 2).sum(axis=1) / (r - 1)
+
+
+def rps(y_prob, y_true) -> float:
+    """Mean **normalized** Ranked Probability Score (lower is better; range 0..1).
+
+    Parameters
+    ----------
+    y_prob : array-like, shape (n, r)
+        Forecast probabilities, columns ordered H, D, A.
+    y_true : array-like, shape (n,)
+        Realized outcomes as class indices (0=H, 1=D, 2=A) or 'H'/'D'/'A' strings.
+    """
+    return float(rps_per_match(y_prob, y_true).mean())
 
 
 def multiclass_log_loss(y_prob, y_true, eps: float = 1e-15) -> float:
