@@ -22,16 +22,21 @@ played history only. Deep-run / title odds remain PROVISIONAL — the knockout b
 from __future__ import annotations
 
 import math
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
 
 from . import clean, datasets, elo, features
 from .models import EnsembleModel
-from .tournament import load_groups
+from .tournament import _knockout, _simulate_group, load_groups, r32_matchups
 
 # Elo points -> natural log-odds (the standard Elo logistic), for the strength-shock tilt.
 _ELO_LOGIT = math.log(10.0) / 400.0
+# Furthest-round buckets: a team with reached-size <= lim counts toward that round.
+_REACH_BUCKETS: tuple[tuple[str, int], ...] = (
+    ("R16", 16), ("QF", 8), ("SF", 4), ("Final", 2), ("title", 1),
+)
 
 # groups_2026 display name -> data (martj42) spelling, for the few that differ. The rest
 # (South Korea, Cape Verde, Curaçao, DR Congo, ...) already match the data spelling directly.
@@ -299,3 +304,130 @@ def build_forecast_model(
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),
             "n_group_fixtures": n_group, "unresolved": unresolved}
     return model, sim_groups, display_to_data, info
+
+
+# --------------------------------------------------------------------------- #
+# Reporting: Monte-Carlo probabilities + one traced scenario
+# --------------------------------------------------------------------------- #
+def groups_by_name(sim_groups: pd.DataFrame) -> dict[str, list[str]]:
+    """{group letter -> [team, ...]} in the data's spelling, group order A-L."""
+    return {g: sim_groups.loc[sim_groups["group"] == g, "team"].tolist()
+            for g in sorted(sim_groups["group"].unique())}
+
+
+def run_probabilities(model, group_teams: dict, n_sims: int, seed: int) -> tuple[dict, dict]:
+    """Monte-Carlo the tournament `n_sims` times; return (reach_counts, place_counts).
+
+    Reuses the shipped ``tournament._simulate_group`` / ``_knockout`` so these probabilities
+    match ``simulate_tournament`` exactly, and additionally tallies group placement (finishing
+    1st/2nd/3rd/4th). Counts are integers; divide by ``n_sims`` for probabilities. Honours the
+    optional ``begin_tournament`` per-sim hook.
+    """
+    rng = np.random.default_rng(seed)
+    begin = getattr(model, "begin_tournament", None)
+    teams = [t for ts in group_teams.values() for t in ts]
+    reach = {t: {k: 0 for k in ("advance", "R16", "QF", "SF", "Final", "title")} for t in teams}
+    place = {t: [0, 0, 0, 0] for t in teams}   # counts of finishing 1st / 2nd / 3rd / 4th
+    for _ in range(n_sims):
+        if begin is not None:
+            begin(rng)
+        winners, runners, thirds = {}, {}, []
+        for g, ts in group_teams.items():
+            table = _simulate_group(ts, model, rng)
+            for rank, s in enumerate(table):
+                place[s["team"]][rank] += 1
+            winners[g] = table[0]["team"]
+            runners[g] = table[1]["team"]
+            thirds.append({**table[2], "group": g})
+        best = sorted(thirds, key=lambda s: (s["pts"], s["gd"], s["gf"]), reverse=True)[:8]
+        third_by_group = {s["group"]: s["team"] for s in best}
+        for t in set(winners.values()) | set(runners.values()) | set(third_by_group.values()):
+            reach[t]["advance"] += 1
+        for t, sz in _knockout(winners, runners, third_by_group, model, rng).items():
+            for name, lim in _REACH_BUCKETS:
+                if sz <= lim:
+                    reach[t][name] += 1
+    return reach, place
+
+
+def fixture_goal_model(model, home: str, away: str) -> dict:
+    """Expected goals, most-likely scoreline and P(H/D/A) for a fixture — no simulation.
+
+    Reads the forecast model's precomputed (reweighted, real-venue) scoreline matrix directly.
+    """
+    M = model.matrices[(home, away)]
+    rows = M.sum(axis=1)
+    cols = M.sum(axis=0)
+    g = np.arange(M.shape[0])
+    x, y = np.unravel_index(int(M.argmax()), M.shape)
+    return {
+        "e_home": float(g @ rows), "e_away": float(g @ cols),
+        "most_likely": (int(x), int(y)),
+        "p_home": float(np.tril(M, -1).sum()), "p_draw": float(np.trace(M)),
+        "p_away": float(np.triu(M, 1).sum()),
+    }
+
+
+def _play_traced(model, a: str, b: str, rng) -> tuple[int, int, str, bool]:
+    """One knockout tie -> (home_goals, away_goals, winner, went_to_shootout)."""
+    gh, ga = model.sample_scoreline(a, b, neutral=True, rng=rng)
+    if gh == ga:
+        scale = getattr(model, "strength_scale", 400.0)
+        delta = model.team_strength(a) - model.team_strength(b)
+        winner = a if rng.random() < 1.0 / (1.0 + 10 ** (-delta / scale)) else b
+        return gh, ga, winner, True
+    return gh, ga, (a if gh > ga else b), False
+
+
+def simulate_traced(model, group_teams: dict, seed: int) -> dict:
+    """One fully-recorded tournament **realization** (not an average).
+
+    Records every group fixture's scoreline + final standings, the 8 best third-placed teams,
+    and the R32->Final bracket (each tie's scoreline, winner, and whether it went to a shootout)
+    down to the champion. Same group/knockout structure as the shipped simulator.
+    """
+    rng = np.random.default_rng(seed)
+    begin = getattr(model, "begin_tournament", None)
+    if begin is not None:
+        begin(rng)
+    groups_out, winners, runners, thirds = {}, {}, {}, []
+    for g, ts in group_teams.items():
+        stats = {t: {"team": t, "pts": 0, "gf": 0, "ga": 0} for t in ts}
+        fixtures = []
+        for a, b in combinations(ts, 2):
+            ga_, gb_ = model.sample_scoreline(a, b, neutral=True, rng=rng)
+            stats[a]["gf"] += ga_; stats[a]["ga"] += gb_
+            stats[b]["gf"] += gb_; stats[b]["ga"] += ga_
+            if ga_ > gb_:
+                stats[a]["pts"] += 3
+            elif gb_ > ga_:
+                stats[b]["pts"] += 3
+            else:
+                stats[a]["pts"] += 1; stats[b]["pts"] += 1
+            fixtures.append((a, b, int(ga_), int(gb_)))
+        table = list(stats.values())
+        for s in table:
+            s["gd"] = s["gf"] - s["ga"]
+        rng.shuffle(table)
+        table.sort(key=lambda s: (s["pts"], s["gd"], s["gf"]), reverse=True)
+        groups_out[g] = {"table": table, "fixtures": fixtures}
+        winners[g] = table[0]["team"]; runners[g] = table[1]["team"]
+        thirds.append({**table[2], "group": g})
+    best = sorted(thirds, key=lambda s: (s["pts"], s["gd"], s["gf"]), reverse=True)[:8]
+    third_by_group = {s["group"]: s["team"] for s in best}
+
+    field, bracket = [], []
+    for a, b in r32_matchups(winners, runners, third_by_group):
+        gh, ga, w, pens = _play_traced(model, a, b, rng)
+        field.append(w)
+        bracket.append(("R32", a, b, gh, ga, w, pens))
+    for name in ("R16", "QF", "SF", "Final"):
+        nxt = []
+        for i in range(0, len(field), 2):
+            a, b = field[i], field[i + 1]
+            gh, ga, w, pens = _play_traced(model, a, b, rng)
+            nxt.append(w)
+            bracket.append((name, a, b, gh, ga, w, pens))
+        field = nxt
+    return {"groups": groups_out, "best_thirds": [s["group"] for s in best],
+            "third_by_group": third_by_group, "bracket": bracket, "champion": field[0]}
