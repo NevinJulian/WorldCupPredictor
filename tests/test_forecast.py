@@ -140,6 +140,73 @@ def test_forecast_model_unknown_pair_falls_back():
 
 
 # --------------------------------------------------------------------------- #
+# Strength-uncertainty dispersion lever (rating_sigma)
+# --------------------------------------------------------------------------- #
+def _hda(X):
+    return float(np.tril(X, -1).sum()), float(np.trace(X)), float(np.triu(X, 1).sum())
+
+
+def test_tilt_shifts_winshare_and_preserves_draw():
+    fm = forecast.ForecastMatchModel({}, {})
+    M = forecast.reweight_to_outcome(np.ones((4, 4)) / 16.0, (0.4, 0.3, 0.3))
+    pH0, pD0, pA0 = _hda(M)
+    up = fm._tilt(M, 0.6)                       # positive supremacy favours home
+    pH1, pD1, pA1 = _hda(up)
+    assert pH1 > pH0 and pA1 < pA0
+    assert pD1 == pytest.approx(pD0)            # draw mass preserved
+    assert up.sum() == pytest.approx(1.0)
+    assert _hda(fm._tilt(M, -0.6))[0] < pH0     # negative favours away
+    assert np.allclose(fm._tilt(M, 0.0), M)     # zero delta is a no-op
+
+
+def test_begin_tournament_shock_behaviour():
+    fm = forecast.ForecastMatchModel({}, {"A": 1800.0, "B": 1500.0}, rating_sigma=0.0)
+    fm.begin_tournament(np.random.default_rng(0))
+    assert fm._shock is None                    # off by default
+    fm.rating_sigma = 80.0
+    fm.begin_tournament(np.random.default_rng(0))
+    assert set(fm._shock) == {"A", "B"}
+    assert all(isinstance(v, float) for v in fm._shock.values())
+
+
+def test_rating_sigma_zero_is_passthrough():
+    # With the lever off, begin_tournament + sample_scoreline reproduce the matrix marginals.
+    P = forecast.reweight_to_outcome(np.ones((4, 4)) / 16.0, (0.5, 0.2, 0.3))
+    fm = forecast.ForecastMatchModel({("X", "Y"): P}, {"X": 1.0, "Y": 0.0}, rating_sigma=0.0)
+    fm.begin_tournament(np.random.default_rng(0))
+    rng = np.random.default_rng(1)
+    h = d = a = 0
+    n = 6000
+    for _ in range(n):
+        gh, ga = fm.sample_scoreline("X", "Y", rng=rng)
+        h, d, a = (h + (gh > ga), d + (gh == ga), a + (gh < ga))
+    assert h / n == pytest.approx(0.5, abs=0.03)
+    assert d / n == pytest.approx(0.2, abs=0.03)
+
+
+def test_simulate_tournament_invokes_begin_tournament_each_sim():
+    calls = {"n": 0}
+
+    class Stub:
+        strength_scale = 400.0
+
+        def begin_tournament(self, rng):
+            calls["n"] += 1
+
+        def team_strength(self, t):
+            return 1500.0
+
+        def sample_scoreline(self, a, b, neutral=True, rng=None):
+            rng = rng or np.random.default_rng()
+            return int(rng.integers(0, 3)), int(rng.integers(0, 3))
+
+    teams = [f"T{i}" for i in range(48)]
+    groups = pd.DataFrame({"group": [chr(ord("A") + i // 4) for i in range(48)], "team": teams})
+    tournament.simulate_tournament(groups, Stub(), n_sims=3, seed=0)
+    assert calls["n"] == 3
+
+
+# --------------------------------------------------------------------------- #
 # End-to-end assembly + simulation
 # --------------------------------------------------------------------------- #
 def test_build_forecast_model_end_to_end():
