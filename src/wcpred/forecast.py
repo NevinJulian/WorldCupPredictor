@@ -28,7 +28,8 @@ import numpy as np
 import pandas as pd
 
 from . import clean, datasets, elo, features
-from .models import EnsembleModel
+from .confederations import confederation
+from .models import ConfederationCalibrator, EnsembleModel
 from .tournament import _knockout, _simulate_group, load_groups, r32_matchups
 
 # Elo points -> natural log-odds (the standard Elo logistic), for the strength-shock tilt.
@@ -238,11 +239,14 @@ def build_forecast_model(
     groups: pd.DataFrame | None = None,
     ensemble_kwargs: dict | None = None,
     rating_sigma: float = 0.0,
+    confed_calibration: bool = True,
 ):
     """Fit the ensemble on all played data and assemble the 2026 `ForecastMatchModel`.
 
     ``rating_sigma`` (Elo) turns on the per-tournament strength-shock dispersion lever; it is
     0 (off) by default because the backtest does not support it (reports/sim_dispersion_2026.md).
+    ``confed_calibration`` (ON by default) applies the per-confederation offset, which improves
+    the walk-forward RPS and narrows the calibration gap (reports/confed_calibration_2026.md).
 
     Returns ``(model, sim_groups, display_to_data, info)``:
       * ``model``            — the ForecastMatchModel for `simulate_tournament`.
@@ -261,8 +265,10 @@ def build_forecast_model(
     ratings = elo_model.ratings
     feat = features.build_features(with_elo, ranking, hosts=features.HOSTS_2026)
 
-    ens = EnsembleModel(**(ensemble_kwargs or {})).fit(datasets.played_only(feat))
+    played = datasets.played_only(feat)
+    ens = EnsembleModel(**(ensemble_kwargs or {})).fit(played)
     dc = ens.dc_
+    calib = ConfederationCalibrator().fit(played) if confed_calibration else None
 
     g = groups.copy()
     g["team_data"] = g["team"].map(lambda t: resolve_team(t, ratings))
@@ -272,9 +278,15 @@ def build_forecast_model(
     # Per-team current snapshot from played history only (leakage-free, no contamination).
     snap = team_snapshot(matches[matches["played"]].copy(), ranking, teams, features.HOSTS_2026)
 
-    # Knockout layer: every ordered pair on neutral ground, scored by the ensemble.
+    team_confed = {t: confederation(t) for t in teams}
+
+    # Knockout layer: every ordered pair on neutral ground, scored by the ensemble (then the
+    # confederation offset, if on, before reweighting the Dixon-Coles scoreline matrix).
     pairs = [(a, b) for a in teams for b in teams if a != b]
     pair_probs = ens.predict_proba(assemble_pairs(snap, pairs))
+    if calib is not None:
+        pair_probs = calib.adjust(pair_probs, [team_confed[a] for a, _ in pairs],
+                                  [team_confed[b] for _, b in pairs])
     matrices: dict[tuple[str, str], np.ndarray] = {}
     for (a, b), pr in zip(pairs, pair_probs):
         matrices[(a, b)] = reweight_to_outcome(dc.score_matrix(a, b, neutral=True), pr)
@@ -285,7 +297,11 @@ def build_forecast_model(
                & feat["home_team"].isin(teams) & feat["away_team"].isin(teams)].copy()
     n_group = 0
     if len(grp):
-        for (_, r), pr in zip(grp.iterrows(), ens.predict_proba(grp)):
+        grp_probs = ens.predict_proba(grp)
+        if calib is not None:
+            grp_probs = calib.adjust(grp_probs, grp["home_confed"].to_numpy(),
+                                     grp["away_confed"].to_numpy())
+        for (_, r), pr in zip(grp.iterrows(), grp_probs):
             h, a, neu = r["home_team"], r["away_team"], bool(r["neutral"])
             M = reweight_to_outcome(dc.score_matrix(h, a, neutral=neu), pr)
             matrices[(h, a)] = M
@@ -302,7 +318,8 @@ def build_forecast_model(
     sim_groups = g.assign(team=g["team_data"])
     display_to_data = dict(zip(g["team_data"], g["team"]))
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),
-            "n_group_fixtures": n_group, "unresolved": unresolved}
+            "n_group_fixtures": n_group, "unresolved": unresolved,
+            "confed_offsets": dict(calib.offsets_) if calib is not None else {}}
     return model, sim_groups, display_to_data, info
 
 

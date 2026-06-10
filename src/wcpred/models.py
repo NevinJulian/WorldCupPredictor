@@ -27,6 +27,7 @@ time-based, training strictly before each World Cup (see datasets.walk_forward_t
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -509,4 +510,116 @@ def walk_forward_ensemble(
         y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
         rows.append({"year": year, "n": int(len(test)),
                      "rps": metrics.rps(proba, y_true), "weight": model.weight_})
+    return rows
+
+
+# --------------------------------------------------------------------------- #
+# Confederation calibration
+# --------------------------------------------------------------------------- #
+_WIN_SHARE = {"H": (1.0, 0.0), "D": (0.5, 0.5), "A": (0.0, 1.0)}   # result -> (home, away) share
+
+
+class ConfederationCalibrator:
+    """A per-confederation outcome offset estimated from inter-confederation matches.
+
+    Cross-confederation strength is anchored only by the (sparse) games between confederations,
+    and the models systematically mis-rate some confederations there (the WC backtest shows AFC /
+    CONCACAF over-predicted, CONMEBOL / UEFA under-predicted — same shape for the Elo baseline and
+    the ensemble). This learns a small, shrinkage-regularised offset per confederation and applies
+    it as a win/loss logit tilt on any model's H/D/A — narrowing the calibration gap and (on the
+    backtest) improving RPS.
+
+    **Leakage-safe.** `fit` consumes only the rows handed to it: it time-splits them, fits an
+    internal Elo-logistic detector on the older slice, and estimates each confederation's mean
+    ``actual - predicted`` win-share on the newer (held-out) slice — out-of-sample, so the residual
+    reflects a real bias rather than in-sample fit. Per WC fold, pass the pre-tournament training
+    set only; nothing peeks at the test data.
+
+    The offset is the shrunk mean ``sum_resid / (count + shrinkage)`` (small confederations are
+    pulled toward 0); only confederations with at least ``min_matches`` inter-confederation games
+    get a non-zero offset. The tilt magnitude is ``sensitivity`` (Elo-logit units per win-share
+    point; the default ~4 is the logistic slope ``1/(p(1-p))`` at a typical win probability).
+    """
+
+    def __init__(self, shrinkage: float = 150.0, sensitivity: float = 4.0,
+                 cal_fraction: float = 0.3, min_matches: int = 30):
+        self.shrinkage = shrinkage
+        self.sensitivity = sensitivity
+        self.cal_fraction = cal_fraction
+        self.min_matches = min_matches
+        self.offsets_: dict[str, float] = {}
+
+    def fit(self, df: pd.DataFrame) -> "ConfederationCalibrator":
+        d = df.sort_values("date", kind="stable")
+        cut = int(round(len(d) * (1.0 - self.cal_fraction)))
+        older, hold = d.iloc[:cut], d.iloc[cut:]
+        if len(older) < 50 or len(hold) < self.min_matches:
+            self.offsets_ = {}                     # too little history -> no adjustment
+            return self
+        proba = EloLogisticModel().fit(older).predict_proba(hold)   # out-of-sample detector
+        self.offsets_ = self._estimate(hold, proba)
+        return self
+
+    def _estimate(self, df: pd.DataFrame, proba: np.ndarray) -> dict[str, float]:
+        hc = df["home_confed"].to_numpy()
+        ac = df["away_confed"].to_numpy()
+        res = df["result"].to_numpy()
+        sums: dict[str, float] = defaultdict(float)
+        counts: dict[str, int] = defaultdict(int)
+        for i in range(len(df)):
+            if pd.isna(hc[i]) or pd.isna(ac[i]) or hc[i] == ac[i] or res[i] not in _WIN_SHARE:
+                continue
+            pH, pD, pA = proba[i]
+            oh, oa = _WIN_SHARE[res[i]]
+            sums[hc[i]] += oh - (pH + 0.5 * pD)
+            counts[hc[i]] += 1
+            sums[ac[i]] += oa - (pA + 0.5 * pD)
+            counts[ac[i]] += 1
+        return {c: sums[c] / (counts[c] + self.shrinkage)
+                for c in sums if counts[c] >= self.min_matches}
+
+    def adjust(self, proba: np.ndarray, home_confed, away_confed) -> np.ndarray:
+        """Tilt each H/D/A row by ``sensitivity * (offset[home_confed] - offset[away_confed])``.
+
+        Non-draw mass is shifted between home and away (the draw probability is preserved), then
+        the row is renormalised. Rows whose confederations have no offset are returned unchanged.
+        """
+        out = np.array(proba, dtype=float).copy()
+        hc = np.asarray(home_confed)
+        ac = np.asarray(away_confed)
+        for i in range(len(out)):
+            delta = self.sensitivity * (self.offsets_.get(hc[i], 0.0) - self.offsets_.get(ac[i], 0.0))
+            if delta == 0.0:
+                continue
+            pH, pD, pA = out[i]
+            nd = pH + pA
+            if nd <= 0:
+                continue
+            w = 1.0 / (1.0 + np.exp(-(np.log(max(pH, 1e-9) / max(pA, 1e-9)) + delta)))
+            out[i] = [nd * w, pD, nd * (1.0 - w)]
+        s = out.sum(axis=1, keepdims=True)
+        return np.divide(out, s, out=np.full_like(out, 1.0 / 3.0), where=s > 0)
+
+
+def walk_forward_confed_calibrated(
+    df: pd.DataFrame, years: tuple[int, ...] = DEFAULT_WC_YEARS,
+    base_factory=None, **calib_kwargs
+) -> list[dict]:
+    """Per WC, score the base model with and without the confederation calibration.
+
+    `base_factory()` builds the base outcome model (defaults to EnsembleModel). The calibrator is
+    fit on each fold's training set ONLY (as-of), then applied to the test predictions. Returns one
+    dict per tournament: ``{"year", "n", "rps_base", "rps_cal", "offsets"}``.
+    """
+    base_factory = base_factory or EnsembleModel
+    rows: list[dict] = []
+    for year, train, test in datasets.walk_forward_tournaments(df, years):
+        calib = ConfederationCalibrator(**calib_kwargs).fit(train)
+        base = base_factory().fit(train)
+        pb = base.predict_proba(test)
+        pc = calib.adjust(pb, test["home_confed"].to_numpy(), test["away_confed"].to_numpy())
+        y = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
+        rows.append({"year": year, "n": int(len(test)),
+                     "rps_base": metrics.rps(pb, y), "rps_cal": metrics.rps(pc, y),
+                     "offsets": dict(calib.offsets_)})
     return rows
