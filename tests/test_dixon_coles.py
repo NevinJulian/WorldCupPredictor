@@ -150,15 +150,29 @@ def test_sample_scoreline_returns_nonneg_int_pair():
 
 
 def test_sample_scoreline_runs_in_simulator():
-    # The whole point: drop the DC model into simulate_tournament unchanged.
-    df, teams, _, _ = _history()
+    # The whole point: drop the DC model into the real 2026-format simulator unchanged.
+    # That simulator needs the 12 groups A-L (48 teams), so fit on a 48-team history.
+    rng = np.random.default_rng(1)
+    teams = [f"N{i}" for i in range(48)]
+    att = {t: float(rng.normal(0, 0.4)) for t in teams}
+    dfc = {t: float(rng.normal(0, 0.3)) for t in teams}
+    rows, date = [], pd.Timestamp("2014-01-01")
+    for _ in range(1600):
+        date += pd.Timedelta(days=1)
+        h, a = rng.choice(teams, 2, replace=False)
+        rows.append({"date": date, "home_team": h, "away_team": a,
+                     "home_score": int(rng.poisson(np.exp(0.2 + att[h] - dfc[a]))),
+                     "away_score": int(rng.poisson(np.exp(0.2 + att[a] - dfc[h]))),
+                     "neutral": True, "tournament": "Friendly"})
+    df = pd.DataFrame(rows); df["played"] = True
     model = models.DixonColesModel().fit(df)
-    groups = pd.DataFrame({"group": ["A"] * 4 + ["B"] * 4, "team": teams})
+    groups = pd.DataFrame({"group": [chr(ord("A") + i // 4) for i in range(48)], "team": teams})
     # No ratings dict: the simulator now reads model.team_strength (DC attack+defence).
-    odds = tournament.simulate_tournament(groups, model, n_sims=60, seed=1)
-    assert len(odds) == 8
+    odds = tournament.simulate_tournament(groups, model, n_sims=40, seed=1)
+    assert len(odds) == 48
     assert (odds["advance"] <= 1.0).all()
-    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.02)  # exactly one champion per sim
+    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.02)   # exactly one champion per sim
+    assert odds["advance"].sum() == pytest.approx(32.0, abs=1e-9)
 
 
 def test_walk_forward_dixon_coles_runs():

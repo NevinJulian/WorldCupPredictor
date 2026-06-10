@@ -128,13 +128,13 @@ def test_time_split_is_chronological():
 
 
 def test_tournament_simulation_runs():
-    groups = pd.DataFrame({
-        "group": ["A"] * 4 + ["B"] * 4,
-        "team": ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"],
-    })
-    ratings = {t: 1500 + 50 * i for i, t in enumerate(groups["team"])}
+    # The simulator models the real 2026 format: 12 groups A-L of 4 (48 teams).
+    teams = [f"T{i}" for i in range(48)]
+    groups = pd.DataFrame({"group": [chr(ord("A") + i // 4) for i in range(48)], "team": teams})
+    ratings = {t: 1500 + 5 * i for i, t in enumerate(teams)}
     model = tournament.EloMatchModel(ratings)
     odds = tournament.simulate_tournament(groups, model, n_sims=200, seed=1)
-    assert len(odds) == 8
+    assert len(odds) == 48
     assert (odds["advance"] <= 1.0).all() and (odds["Winner"] >= 0).all()
-    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.05)  # exactly one winner per sim
+    assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.05)   # exactly one winner per sim
+    assert odds["advance"].sum() == pytest.approx(32.0, abs=1e-9)  # 32 qualifiers per sim

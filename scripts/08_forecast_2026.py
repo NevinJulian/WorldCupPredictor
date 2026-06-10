@@ -7,12 +7,11 @@ calibrated ensemble (GBM + DC) outcome probabilities — so the sim inherits the
 (the ensemble's normalized RPS is 0.2036 vs DC-alone 0.2147). The group stage uses the real
 2026 fixtures (with host advantage); knockout pairs are scored on neutral ground.
 
+The knockout bracket is FIFA's real Annex-C R32 slotting (495-combination third-place table)
+wired to the published match tree, so deep-run / title odds are exact for this format.
+
 Output (data/processed/):
     wc2026_forecast_odds.csv  — per-team advance / R16 / QF / SF / Final / title probabilities
-
-NOTE: deep-run / title odds are PROVISIONAL. The knockout bracket seeds qualifiers by
-team strength into a standard bracket rather than FIFA's Annex-C third-place table (M4-2);
-group-stage and `advance` probabilities are the trustworthy part.
 """
 import pathlib
 import sys
@@ -40,7 +39,7 @@ def main(sims: int = 20000) -> int:
     cols = ["team", "win_group", "runner_up", "advance", "R16", "QF", "SF", "Final", "title"]
     odds[cols].to_csv(out, index=False)
 
-    print("\nTop 16 title contenders (deep-run odds PROVISIONAL — Annex-C bracket pending):")
+    print("\nTop 16 title contenders (real Annex-C knockout bracket):")
     show = odds.head(16)[["team", "advance", "R16", "QF", "SF", "Final", "title"]]
     print(show.to_string(index=False))
 
