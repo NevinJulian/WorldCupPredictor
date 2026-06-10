@@ -154,8 +154,8 @@ def test_sample_scoreline_runs_in_simulator():
     df, teams, _, _ = _history()
     model = models.DixonColesModel().fit(df)
     groups = pd.DataFrame({"group": ["A"] * 4 + ["B"] * 4, "team": teams})
-    ratings = {t: 1500.0 for t in teams}  # used only for knockout seeding
-    odds = tournament.simulate_tournament(groups, model, ratings, n_sims=60, seed=1)
+    # No ratings dict: the simulator now reads model.team_strength (DC attack+defence).
+    odds = tournament.simulate_tournament(groups, model, n_sims=60, seed=1)
     assert len(odds) == 8
     assert (odds["advance"] <= 1.0).all()
     assert odds["Winner"].sum() == pytest.approx(1.0, abs=0.02)  # exactly one champion per sim

@@ -62,7 +62,7 @@ def main(sims: int = 20000) -> int:
     sim_groups = groups.assign(team=groups["team_resolved"])
     mm = tournament.EloMatchModel(ratings)
     print(f"Simulating {sims:,} tournaments (Elo baseline)...")
-    odds = tournament.simulate_tournament(sim_groups, mm, ratings, n_sims=sims)
+    odds = tournament.simulate_tournament(sim_groups, mm, n_sims=sims)
     # restore display names
     back = dict(zip(groups["team_resolved"], groups["team"]))
     odds["team"] = odds["team"].map(lambda t: back.get(t, t))

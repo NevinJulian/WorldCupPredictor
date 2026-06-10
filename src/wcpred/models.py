@@ -26,6 +26,8 @@ time-based, training strictly before each World Cup (see datasets.walk_forward_t
 """
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
 from scipy import optimize
@@ -134,6 +136,11 @@ class DixonColesModel:
     reference is the training set's own last date; nothing peeks past the cutoff.
     """
 
+    # Shootout/seeding scale for `team_strength` (see team_strength). In log-goal units a
+    # strength difference Δ is the log goal-rate supremacy, so ln 10 makes the simulator's
+    # base-10 logistic 1/(1+10**(-Δ/scale)) equal the natural logistic of that supremacy.
+    strength_scale: float = math.log(10.0)
+
     def __init__(
         self,
         half_life_days: float = 547.0,   # ~1.5 years
@@ -237,6 +244,17 @@ class DixonColesModel:
         lam = np.exp(self.base_ + adv + ah - da)
         mu = np.exp(self.base_ + aa - dh)
         return float(lam), float(mu)
+
+    def team_strength(self, team: str) -> float:
+        """Net strength vs a league-average team: ``attack + defence`` (0 = average).
+
+        The match-model interface the simulator uses for knockout seeding and the shootout
+        tiebreak. ``team_strength(a) - team_strength(b)`` is exactly the log goal-rate
+        supremacy of *a* over *b* on neutral ground (see `_lambdas`), so paired with
+        ``strength_scale = ln 10`` the simulator's base-10 logistic recovers the natural
+        logistic of that supremacy. An unseen team falls back to 0 (league average).
+        """
+        return self.attack_.get(team, 0.0) + self.defence_.get(team, 0.0)
 
     def score_matrix(self, home: str, away: str, neutral: bool = True) -> np.ndarray:
         """(max_goals+1) x (max_goals+1) probability matrix P[x, y] = P(home x, away y)."""
