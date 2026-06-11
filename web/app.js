@@ -11,6 +11,22 @@
   var $ = function (id) { return document.getElementById(id); };
   var state = { data: null, pairs: new Map(), confed: {}, teams: [], flags: {}, n: "50000" };
 
+  // 3-letter FIFA codes for the compact bracket cards (fallback: first 3 letters).
+  var CODE3 = {
+    "Mexico": "MEX", "South Africa": "RSA", "South Korea": "KOR", "Czechia": "CZE",
+    "Canada": "CAN", "Switzerland": "SUI", "Bosnia and Herzegovina": "BIH", "Qatar": "QAT",
+    "Brazil": "BRA", "Morocco": "MAR", "Scotland": "SCO", "Haiti": "HAI", "United States": "USA",
+    "Paraguay": "PAR", "Australia": "AUS", "Türkiye": "TUR", "Germany": "GER", "Ecuador": "ECU",
+    "Ivory Coast": "CIV", "Curaçao": "CUW", "Netherlands": "NED", "Japan": "JPN", "Sweden": "SWE",
+    "Tunisia": "TUN", "Belgium": "BEL", "Egypt": "EGY", "Iran": "IRN", "New Zealand": "NZL",
+    "Spain": "ESP", "Uruguay": "URU", "Cape Verde": "CPV", "Saudi Arabia": "KSA", "France": "FRA",
+    "Senegal": "SEN", "Norway": "NOR", "Iraq": "IRQ", "Argentina": "ARG", "Austria": "AUT",
+    "Algeria": "ALG", "Jordan": "JOR", "Portugal": "POR", "Colombia": "COL", "DR Congo": "COD",
+    "Uzbekistan": "UZB", "England": "ENG", "Croatia": "CRO", "Ghana": "GHA", "Panama": "PAN"
+  };
+  function code3(team) { return CODE3[team] || team.slice(0, 3).toUpperCase(); }
+  var ROUND_NAME = { R32: "Round of 32", R16: "Round of 16", QF: "Quarter-finals", SF: "Semi-finals", Final: "Final" };
+
   // ---- boot ---------------------------------------------------------------
   Promise.all([
     fetch(EXPORT_URL, { cache: "no-cache" }).then(okJson),
@@ -316,41 +332,102 @@
     w.appendChild(el("span", "team__name", team));
     return w;
   }
+  // The bracket renders two layouts from the same data: a mirrored center-final tree (wide,
+  // ≥1024px) and a vertical round-stacked tree (narrow). CSS shows exactly one; neither scrolls
+  // sideways. The chalk bracket is stored in fold order, so the first half of each round is the
+  // left side of the tree and the second half is the right side.
+  function byRound(bracket) {
+    var by = { R32: [], R16: [], QF: [], SF: [], Final: [] };
+    bracket.forEach(function (t) { if (by[t.round]) by[t.round].push(t); });
+    return by;
+  }
   function renderBracket(chalk) {
     var wrap = $("bracket"); wrap.textContent = "";
     if (!chalk) return;
-    var rounds = [["R32", "Round of 32"], ["R16", "Round of 16"], ["QF", "Quarter-finals"],
-                  ["SF", "Semi-finals"], ["Final", "Final"]];
-    rounds.forEach(function (rr) {
-      var col = el("div", "bround");
-      col.appendChild(el("h4", "bround__title", rr[1]));
-      chalk.bracket.filter(function (t) { return t.round === rr[0]; }).forEach(function (t) {
-        var tie = el("button", "tie");
-        tie.appendChild(tieTeam(t, t.home));
-        tie.appendChild(el("span", "tie__score", scoreText(t.modal)));
-        tie.appendChild(tieTeam(t, t.away));
-        tie.addEventListener("click", function () {
-          var m = neutralMatch(t.home, t.away);
-          if (m) openDetail(m, t.home, t.away, rr[1]);
-        });
-        col.appendChild(tie);
-      });
-      wrap.appendChild(col);
-    });
-    var cc = el("div", "bround bround--champ");
-    cc.appendChild(el("h4", "bround__title", "Champion"));
-    var champ = el("div", "champ");
-    champ.appendChild(el("span", "champ__trophy", "🏆"));   // 🏆
-    champ.appendChild(flagEl(chalk.champion, "flag--lg"));
-    champ.appendChild(el("span", "champ__name", chalk.champion));
-    cc.appendChild(champ);
-    wrap.appendChild(cc);
+    var by = byRound(chalk.bracket);
+    wrap.appendChild(buildWideBracket(by, chalk.champion));
+    wrap.appendChild(buildTallBracket(by, chalk.champion));
   }
-  function tieTeam(t, team) {
-    var w = el("span", "tie__team" + (t.winner === team ? " is-winner" : ""));
-    w.appendChild(flagEl(team));
-    w.appendChild(el("span", "team__name", team));
-    return w;
+
+  // --- shared compact tie card (flag + 3-letter code + per-team goals; winner highlighted) ---
+  function bracketTie(t) {
+    var sc = parseScore(t.modal);
+    var tie = el("button", "bx-tie");
+    tie.appendChild(bxRow(t, t.home, sc[0]));
+    tie.appendChild(bxRow(t, t.away, sc[1]));
+    tie.setAttribute("aria-label",
+      t.home + " " + sc[0] + "–" + sc[1] + " " + t.away + "; " + t.winner + " advance");
+    tie.addEventListener("click", function () {
+      var m = neutralMatch(t.home, t.away);
+      if (m) openDetail(m, t.home, t.away, ROUND_NAME[t.round] || t.round);
+    });
+    return tie;
+  }
+  function bxRow(t, team, goals) {
+    var r = el("div", "bx-row" + (t.winner === team ? " is-winner" : ""));
+    r.appendChild(flagEl(team));
+    r.appendChild(el("span", "bx-code", code3(team)));
+    r.appendChild(el("span", "bx-goals", String(goals)));
+    return r;
+  }
+  function championCard(champion, cls) {
+    var ch = el("div", "bx-champ" + (cls ? " " + cls : ""));
+    ch.appendChild(el("span", "bx-champ__trophy", "🏆"));   // 🏆
+    ch.appendChild(flagEl(champion, "flag--lg"));
+    ch.appendChild(el("span", "bx-champ__name", champion));
+    return ch;
+  }
+
+  // --- wide: mirrored center-final tree (9 flex columns) ---
+  function buildWideBracket(by, champion) {
+    var wide = el("div", "bx-wide");
+    // left half feeds rightward; "first" = the R32 leaves (no incoming connector)
+    wide.appendChild(wideCol("R32", by.R32.slice(0, 8), "l", "first"));
+    wide.appendChild(wideCol("R16", by.R16.slice(0, 4), "l", ""));
+    wide.appendChild(wideCol("QF", by.QF.slice(0, 2), "l", ""));
+    wide.appendChild(wideCol("SF", by.SF.slice(0, 1), "l", "single"));
+    wide.appendChild(finalCol(by.Final[0], champion));
+    wide.appendChild(wideCol("SF", by.SF.slice(1, 2), "r", "single"));
+    wide.appendChild(wideCol("QF", by.QF.slice(2, 4), "r", ""));
+    wide.appendChild(wideCol("R16", by.R16.slice(4, 8), "r", ""));
+    wide.appendChild(wideCol("R32", by.R32.slice(8, 16), "r", "first"));
+    return wide;
+  }
+  function wideCol(label, ties, side, mod) {
+    var col = el("div", "bx-col bx-col--" + side + (mod ? " bx-col--" + mod : ""));
+    col.appendChild(el("div", "bx-col__title", label));
+    var body = el("div", "bx-col__body");
+    ties.forEach(function (t) {
+      var slot = el("div", "bx-slot");
+      slot.appendChild(bracketTie(t));
+      body.appendChild(slot);
+    });
+    col.appendChild(body);
+    return col;
+  }
+  function finalCol(t, champion) {
+    var col = el("div", "bx-col bx-col--final");
+    col.appendChild(el("div", "bx-col__title", "Final"));
+    var body = el("div", "bx-col__body");
+    if (t) { var slot = el("div", "bx-slot"); slot.appendChild(bracketTie(t)); body.appendChild(slot); }
+    body.appendChild(championCard(champion));
+    col.appendChild(body);
+    return col;
+  }
+
+  // --- tall: rounds stacked top→bottom, full-width cards, vertical scroll only ---
+  function buildTallBracket(by, champion) {
+    var tall = el("div", "bx-tall");
+    ["R32", "R16", "QF", "SF", "Final"].forEach(function (r) {
+      var sec = el("section", "bx-sec");
+      sec.appendChild(el("h4", "bx-sec__title", ROUND_NAME[r]));
+      var list = el("div", "bx-sec__list");
+      by[r].forEach(function (t) { list.appendChild(bracketTie(t)); });
+      sec.appendChild(list);
+      tall.appendChild(sec);
+    });
+    tall.appendChild(championCard(champion, "bx-champ--tall"));
+    return tall;
   }
 
   // ---- shared detail modal ------------------------------------------------
@@ -377,7 +454,7 @@
   // ---- mode switch --------------------------------------------------------
   function wireModeSwitch() {
     var btnGame = $("mode-game"), btnTour = $("mode-tournament");
-    function select(which) {
+    function select(which, push) {
       var game = which === "game";
       btnGame.classList.toggle("is-active", game);
       btnTour.classList.toggle("is-active", !game);
@@ -387,9 +464,11 @@
       $("view-tournament").classList.toggle("is-active", !game);
       $("view-game").hidden = !game;
       $("view-tournament").hidden = game;
+      if (push !== false) { try { history.replaceState(null, "", game ? "#game" : "#tournament"); } catch (e) {} }
     }
     btnGame.addEventListener("click", function () { select("game"); });
     btnTour.addEventListener("click", function () { select("tournament"); });
+    if (location.hash === "#tournament") select("tournament", false);   // deep-link to the bracket
   }
 
   // ---- footer -------------------------------------------------------------
