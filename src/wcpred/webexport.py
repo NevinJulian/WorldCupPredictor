@@ -6,9 +6,10 @@ reflects the deployed model exactly. `scripts/09_export_web.py` is the thin CLI 
 
 The payload (see `build_payload`) has four sections:
   * ``game_mode``    — every unordered pair of the 48 teams at a NEUTRAL venue: modal scoreline,
-                       top-3 scorelines + probabilities, P(win/draw/win), expected goals.
+                       top-6 scorelines + probabilities, P(win/draw/win), expected goals, P(over
+                       2.5 goals) and the total-goals distribution P(0,1,2,3,4,5+).
   * ``group_stage``  — the 72 real group fixtures (host advantage where the real fixture has it),
-                       same fields. These match `data/processed/forecast_2026.json` exactly.
+                       same fields. E[goals]/P(H/D/A)/modal still match `forecast_2026.json` exactly.
   * ``tournament``   — per-team advance/R16/QF/SF/Final/title and per-group win/runner-up/3rd/
                        advance at N in {1000,10000,50000,100000} (the simulate_tournament-equivalent
                        `forecast.run_probabilities`, same seed), plus the deterministic chalk bracket.
@@ -28,6 +29,7 @@ from .confederations import confederation
 
 PROB_DP = 4
 EG_DP = 3
+TOP_K = 6                                    # scorelines listed per fixture in the export
 DEFAULT_LEVELS: tuple[int, ...] = (1000, 10000, 50000, 100000)
 DEFAULT_SEED = 20260611                      # the canonical seed used by forecast_2026.json
 REACH_COLS = ("advance", "R16", "QF", "SF", "Final", "title")
@@ -38,25 +40,45 @@ def _sl(xy) -> str:
     return f"{int(xy[0])}-{int(xy[1])}"
 
 
-def _dist_json(d: dict) -> dict:
-    """Serialise a `forecast.fixture_scoreline_distribution` dict compactly."""
+def _goal_totals(M) -> tuple[list[float], float]:
+    """Total-goals distribution P(total = 0,1,2,3,4,5+) and P(over 2.5) from a score matrix."""
+    G = M.shape[0]
+    buckets = [0.0] * 6
+    for i in range(G):
+        for j in range(G):
+            buckets[min(i + j, 5)] += float(M[i, j])   # bucket 5 = "5 or more"
+    return buckets, buckets[3] + buckets[4] + buckets[5]   # over 2.5 == total >= 3
+
+
+def fixture_dist_json(model, home: str, away: str, top_k: int = TOP_K) -> dict:
+    """Compact per-fixture record read entirely from the (reweighted) score matrix.
+
+    Modal scoreline, the top-k scorelines + probs, E[goals] and P(H/D/A) come from the shipped
+    `forecast.fixture_scoreline_distribution`; P(over 2.5) and the total-goals distribution are
+    derived from the same matrix, so every number matches the shipped forecast exactly.
+    """
+    d = forecast.fixture_scoreline_distribution(model, home, away, top_k=top_k)
+    totals, p_over25 = _goal_totals(model.matrices[(home, away)])
     return {
         "modal": _sl(d["modal"]),
         "top": [[_sl(xy), round(p, PROB_DP)] for xy, p in d["top"]],
         "e_home": round(d["e_home"], EG_DP), "e_away": round(d["e_away"], EG_DP),
         "p_home": round(d["p_home"], PROB_DP), "p_draw": round(d["p_draw"], PROB_DP),
         "p_away": round(d["p_away"], PROB_DP),
+        "p_over25": round(p_over25, PROB_DP),
+        "goal_totals": [round(x, PROB_DP) for x in totals],
     }
 
 
 # --------------------------------------------------------------------------- #
 # Sections
 # --------------------------------------------------------------------------- #
-def game_mode_records(neutral_matrices: dict, teams_data: list[str], disp, top_k: int = 3) -> list[dict]:
+def game_mode_records(neutral_matrices: dict, teams_data: list[str], disp, top_k: int = TOP_K) -> list[dict]:
     """Every unordered pair of the 48 teams at a neutral venue (display-name ordered).
 
-    Reuses `forecast.fixture_scoreline_distribution` by wrapping the all-neutral matrices in a
-    throwaway `ForecastMatchModel`, so the per-fixture maths is exactly the shipped reporting code.
+    Wraps the all-neutral matrices in a throwaway `ForecastMatchModel` so `fixture_dist_json`
+    reads exactly the shipped per-fixture maths. Each record carries the modal scoreline, the
+    top-k scorelines, E[goals], P(H/D/A), P(over 2.5) and the total-goals distribution.
     """
     gm = forecast.ForecastMatchModel(neutral_matrices, {})
     order = sorted(teams_data, key=lambda t: disp(t))
@@ -65,12 +87,11 @@ def game_mode_records(neutral_matrices: dict, teams_data: list[str], disp, top_k
         for b in order[i + 1:]:
             if (a, b) not in neutral_matrices:        # defensive; every pair is precomputed
                 continue
-            d = forecast.fixture_scoreline_distribution(gm, a, b, top_k=top_k)
-            out.append({"home": disp(a), "away": disp(b), **_dist_json(d)})
+            out.append({"home": disp(a), "away": disp(b), **fixture_dist_json(gm, a, b, top_k)})
     return out
 
 
-def group_stage_records(model, wc_fixtures, team_group: dict, disp, top_k: int = 3) -> list[dict]:
+def group_stage_records(model, wc_fixtures, team_group: dict, disp, top_k: int = TOP_K) -> list[dict]:
     """The 72 real group fixtures (true venue / host advantage), same fields as game mode.
 
     `wc_fixtures` is the data's unplayed FIFA-World-Cup fixtures frame (home_team/away_team in
@@ -81,8 +102,8 @@ def group_stage_records(model, wc_fixtures, team_group: dict, disp, top_k: int =
         h, a = r["home_team"], r["away_team"]
         if (h, a) not in model.matrices:
             continue
-        d = forecast.fixture_scoreline_distribution(model, h, a, top_k=top_k)
-        out.append({"group": team_group.get(h, "?"), "home": disp(h), "away": disp(a), **_dist_json(d)})
+        out.append({"group": team_group.get(h, "?"), "home": disp(h), "away": disp(a),
+                    **fixture_dist_json(model, h, a, top_k)})
     return out
 
 

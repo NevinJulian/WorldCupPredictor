@@ -39,7 +39,26 @@ def test_structure_48_teams_groups_confeds(data):
     assert st["annexc"]["n_combinations"] == 495
 
 
-_GAME_FIELDS = ("home", "away", "modal", "top", "e_home", "e_away", "p_home", "p_draw", "p_away")
+_DIST_FIELDS = ("modal", "top", "e_home", "e_away", "p_home", "p_draw", "p_away",
+                "p_over25", "goal_totals")
+
+
+def _check_dist(r):
+    """Validate the per-fixture distribution fields the detail panel relies on."""
+    for f in _DIST_FIELDS:
+        assert f in r, f"record missing '{f}'"
+    assert "-" in r["modal"]
+    # top-6 scorelines, probability-descending, each a 'x-y'
+    assert len(r["top"]) == 6
+    probs = [p for _, p in r["top"]]
+    assert probs == sorted(probs, reverse=True) and all("-" in s for s, _ in r["top"])
+    assert math.isclose(r["p_home"] + r["p_draw"] + r["p_away"], 1.0, abs_tol=2e-3)
+    # total-goals distribution P(0,1,2,3,4,5+) sums to 1; P(over 2.5) == P(total >= 3)
+    gt = r["goal_totals"]
+    assert len(gt) == 6 and all(0.0 <= x <= 1.0 for x in gt)
+    assert math.isclose(sum(gt), 1.0, abs_tol=2e-3)
+    assert 0.0 <= r["p_over25"] <= 1.0
+    assert math.isclose(r["p_over25"], gt[3] + gt[4] + gt[5], abs_tol=2e-3)
 
 
 def test_game_mode_is_all_1128_pairs_with_fields(data):
@@ -49,17 +68,12 @@ def test_game_mode_is_all_1128_pairs_with_fields(data):
     seen = set()
     teamset = set(teams)
     for r in gm:
-        for f in _GAME_FIELDS:
-            assert f in r, f"game_mode record missing '{f}'"
+        assert "home" in r and "away" in r
         assert r["home"] in teamset and r["away"] in teamset and r["home"] != r["away"]
         key = frozenset((r["home"], r["away"]))
         assert key not in seen, f"duplicate pair {r['home']}/{r['away']}"
         seen.add(key)
-        # modal is a 'x-y' scoreline; top is descending [['x-y', p], ...]
-        assert "-" in r["modal"]
-        probs = [p for _, p in r["top"]]
-        assert probs == sorted(probs, reverse=True) and all("-" in s for s, _ in r["top"])
-        assert math.isclose(r["p_home"] + r["p_draw"] + r["p_away"], 1.0, abs_tol=2e-3)
+        _check_dist(r)
     assert len(seen) == 1128                                    # every unordered pair, once
 
 
@@ -76,8 +90,8 @@ def test_group_stage_72_fixtures_with_fields(data):
     gs = data["group_stage"]
     assert len(gs) == 72
     for r in gs:
-        for f in ("group", "home", "away", "modal", "e_home", "e_away", "p_home", "p_draw", "p_away"):
-            assert f in r
+        assert "group" in r and "home" in r and "away" in r
+        _check_dist(r)
 
 
 def test_tournament_levels_and_reach_fields(data):
