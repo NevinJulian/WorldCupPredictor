@@ -64,6 +64,74 @@ def test_elo_home_advantage_and_first_match():
     assert out.loc[0, "elo_expected_home"] > 0.5
 
 
+def _varied_results() -> pd.DataFrame:
+    """A short history exercising several K-tiers and goal-difference branches."""
+    rows = [
+        ("2018-01-01", "A", "B", 1, 0, "Friendly", False),          # margin 1, K_FRIENDLY
+        ("2018-02-01", "B", "C", 3, 0, "FIFA World Cup", True),     # margin 3 (gd 1.75), neutral, K_WORLD_CUP
+        ("2018-03-01", "C", "A", 2, 2, "UEFA Euro", False),         # draw, K_CONTINENTAL
+        ("2018-04-01", "A", "C", 5, 1, "FIFA World Cup qualification", False),  # margin 4 (gd 1.875), K_QUALIFIER
+        ("2018-05-01", "B", "A", 0, 1, "Friendly", False),          # margin 1
+        ("2018-06-01", "C", "B", 4, 0, "Nations League", True),     # margin 4, neutral, K_MINOR
+    ]
+    return pd.DataFrame([
+        {"date": pd.Timestamp(d), "home_team": h, "away_team": a, "home_score": hs,
+         "away_score": as_, "tournament": t, "city": "x", "country": "x", "neutral": neu}
+        for d, h, a, hs, as_, t, neu in rows
+    ])
+
+
+def test_compute_elo_default_params_reproduce_baseline():
+    """Default (home_adv=100, k_scale=1, gd_strength=1) must reproduce the original arithmetic.
+
+    Guards that parametrising compute_elo did not change any rating. The reference loop below
+    is an independent re-implementation of the pre-parametrisation eloratings.net update.
+    """
+    df = _varied_results()
+
+    def original_gd(margin: int) -> float:           # pre-parametrisation goal-diff multiplier
+        m = abs(int(margin))
+        if m <= 1:
+            return 1.0
+        if m == 2:
+            return 1.5
+        if m == 3:
+            return 1.75
+        return 1.75 + (m - 3) / 8.0
+
+    ratings: dict[str, float] = {}
+    ref_post_h, ref_post_a, ref_pre_h, ref_pre_a = [], [], [], []
+    for r in df.itertuples(index=False):
+        rh = ratings.get(r.home_team, elo.DEFAULT_RATING)
+        ra = ratings.get(r.away_team, elo.DEFAULT_RATING)
+        adv = 0.0 if r.neutral else elo.DEFAULT_HOME_ADV
+        we = 1.0 / (1.0 + 10.0 ** (-(rh - ra + adv) / 400.0))
+        w = 1.0 if r.home_score > r.away_score else (0.5 if r.home_score == r.away_score else 0.0)
+        k = elo.k_for_tournament(r.tournament)
+        delta = k * original_gd(r.home_score - r.away_score) * (w - we)
+        ratings[r.home_team], ratings[r.away_team] = rh + delta, ra - delta
+        ref_pre_h.append(rh); ref_pre_a.append(ra)
+        ref_post_h.append(rh + delta); ref_post_a.append(ra - delta)
+
+    out, _ = elo.compute_elo(df)   # default params
+    assert out["elo_home"].to_list() == pytest.approx(ref_pre_h)
+    assert out["elo_away"].to_list() == pytest.approx(ref_pre_a)
+    assert out["elo_home_post"].to_list() == pytest.approx(ref_post_h)
+    assert out["elo_away_post"].to_list() == pytest.approx(ref_post_a)
+
+
+def test_elo_params_change_ratings():
+    """The three knobs are actually wired: changing each moves ratings off the default."""
+    df = _varied_results()
+    base, _ = elo.compute_elo(df)
+    for kwargs in ({"home_adv": 50.0}, {"k_scale": 1.5}, {"gd_strength": 0.0}):
+        tuned, _ = elo.compute_elo(df, **kwargs)
+        assert not np.allclose(tuned["elo_home_post"], base["elo_home_post"]), \
+            f"{kwargs} did not change ratings"
+    # gd_strength=1.0 with margin-1-only data is a no-op vs default on those rows is trivially true;
+    # but gd_strength=0 must flatten every multiplier to 1 -> different from default here.
+
+
 def test_elo_is_as_of_no_leakage():
     """A team's pre-match Elo at match k must equal its post-match Elo from match k-1."""
     res = _synthetic_results()

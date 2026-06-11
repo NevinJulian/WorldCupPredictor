@@ -13,6 +13,14 @@ where
     W    = 1 / 0.5 / 0 for home win / draw / loss
     G    = goal-difference multiplier (1, 1.5, 1.75, then +1/8 per extra goal)
     K    = importance weight from the tournament label (friendly 20 ... World Cup 60)
+
+Three knobs are tunable (see scripts/elo_tuning.py); their defaults reproduce the
+eloratings.net rules above exactly, so the parametrisation is backward-compatible:
+    home_adv    the venue constant added to dr at non-neutral venues (default 100).
+    k_scale     an overall multiplier on every tier K weight (default 1.0).
+    gd_strength scales the goal-difference multiplier's excess over 1, i.e.
+                G = 1 + gd_strength * (G_default - 1) — so 1.0 reproduces the
+                eloratings curve and 0.0 makes every result count the same (default 1.0).
 """
 from __future__ import annotations
 
@@ -24,6 +32,8 @@ import pandas as pd
 
 DEFAULT_RATING = 1500.0
 DEFAULT_HOME_ADV = 100.0
+DEFAULT_K_SCALE = 1.0
+DEFAULT_GD_STRENGTH = 1.0
 
 # Tournament-importance K weights (eloratings.net tiers).
 K_FRIENDLY = 20
@@ -56,16 +66,24 @@ def k_for_tournament(tournament: str) -> int:
     return K_MINOR  # unknown competitive match
 
 
-def goal_diff_multiplier(margin: int) -> float:
-    """eloratings goal-difference weighting."""
+def goal_diff_multiplier(margin: int, strength: float = DEFAULT_GD_STRENGTH) -> float:
+    """eloratings goal-difference weighting, scaled by `strength`.
+
+    The base eloratings curve is 1 / 1.5 / 1.75 / +1/8-per-extra-goal. `strength` scales
+    that curve's *excess over 1*: ``G = 1 + strength * (base - 1)``. So ``strength=1.0``
+    (the default) reproduces eloratings exactly, ``0.0`` makes margin irrelevant (every
+    result weighted 1), and ``>1`` amplifies blowouts.
+    """
     m = abs(int(margin))
     if m <= 1:
-        return 1.0
-    if m == 2:
-        return 1.5
-    if m == 3:
-        return 1.75
-    return 1.75 + (m - 3) / 8.0
+        base = 1.0
+    elif m == 2:
+        base = 1.5
+    elif m == 3:
+        base = 1.75
+    else:
+        base = 1.75 + (m - 3) / 8.0
+    return 1.0 + strength * (base - 1.0)
 
 
 def expected_score(elo_home: float, elo_away: float, home_adv: float) -> float:
@@ -75,6 +93,8 @@ def expected_score(elo_home: float, elo_away: float, home_adv: float) -> float:
 @dataclass
 class EloModel:
     home_adv: float = DEFAULT_HOME_ADV
+    k_scale: float = DEFAULT_K_SCALE
+    gd_strength: float = DEFAULT_GD_STRENGTH
     default_rating: float = DEFAULT_RATING
     ratings: dict[str, float] = field(default_factory=dict)
     last_played: dict[str, "pd.Timestamp"] = field(default_factory=dict)
@@ -118,8 +138,8 @@ class EloModel:
                 continue
 
             w = 1.0 if hs > as_ else (0.5 if hs == as_ else 0.0)
-            k = k_for_tournament(row.tournament)
-            g = goal_diff_multiplier(hs - as_)
+            k = k_for_tournament(row.tournament) * self.k_scale
+            g = goal_diff_multiplier(hs - as_, self.gd_strength)
             delta = k * g * (w - we)
 
             self.ratings[home] = rh + delta
@@ -138,9 +158,18 @@ class EloModel:
         return df
 
 
-def compute_elo(results: pd.DataFrame, home_adv: float = DEFAULT_HOME_ADV) -> tuple[pd.DataFrame, EloModel]:
-    """Convenience wrapper. Returns (matches_with_elo, fitted_model)."""
-    model = EloModel(home_adv=home_adv)
+def compute_elo(
+    results: pd.DataFrame,
+    home_adv: float = DEFAULT_HOME_ADV,
+    k_scale: float = DEFAULT_K_SCALE,
+    gd_strength: float = DEFAULT_GD_STRENGTH,
+) -> tuple[pd.DataFrame, EloModel]:
+    """Convenience wrapper. Returns (matches_with_elo, fitted_model).
+
+    Defaults reproduce the eloratings.net rules exactly (see module docstring); pass
+    `home_adv` / `k_scale` / `gd_strength` to evaluate tuned variants.
+    """
+    model = EloModel(home_adv=home_adv, k_scale=k_scale, gd_strength=gd_strength)
     return model.run(results), model
 
 
