@@ -149,12 +149,19 @@ class DixonColesModel:
         max_goals: int = 10,
         rho_bounds: tuple[float, float] = (-0.2, 0.2),
         max_iter: int = 1000,
+        overdispersion: float = 0.0,
     ):
         self.half_life_days = half_life_days
         self.reg = reg
         self.max_goals = max_goals
         self.rho_bounds = rho_bounds
         self.max_iter = max_iter
+        # Mean-preserving over-dispersion of the per-team goal counts (Step 4 lever). 0 == the
+        # eloratings/Poisson default (so all existing behaviour is unchanged). With a > 0 each
+        # marginal is a negative-binomial at the SAME mean lambda but variance lambda*(1+a*lambda),
+        # fattening the high-score tail; the fit (attack/defence/rho) is untouched, only the output
+        # matrix shape changes. Reweighting then restores the target W/D/L (see scripts/overdispersion_gate.py).
+        self.overdispersion = float(overdispersion)
         # Fitted state (populated by .fit)
         self.base_ = 0.0
         self.home_adv_ = 0.0
@@ -238,6 +245,22 @@ class DixonColesModel:
         k = np.arange(self.max_goals + 1)
         return np.exp(-lam + k * np.log(lam) - gammaln(k + 1))
 
+    def _count_pmf(self, lam: float) -> np.ndarray:
+        """Marginal goal-count pmf over 0..max_goals at mean ``lam``.
+
+        ``overdispersion == 0`` returns the Poisson pmf (the default — identical to ``_pois_pmf``).
+        ``overdispersion = a > 0`` returns a negative-binomial with the SAME mean ``lam`` and
+        variance ``lam*(1 + a*lam)`` (Poisson-Gamma; ``r = 1/a``, ``p = 1/(1 + a*lam)``), which
+        fattens the high-score tail without moving the mean. ``a -> 0`` recovers Poisson.
+        """
+        if self.overdispersion <= 0.0:
+            return self._pois_pmf(lam)
+        k = np.arange(self.max_goals + 1)
+        r = 1.0 / self.overdispersion
+        p = r / (r + lam)                       # mean = r*(1-p)/p = lam
+        return np.exp(gammaln(k + r) - gammaln(r) - gammaln(k + 1)
+                      + r * np.log(p) + k * np.log1p(-p))
+
     def _lambdas(self, home: str, away: str, neutral: bool = True) -> tuple[float, float]:
         ah, dh = self.attack_.get(home, 0.0), self.defence_.get(home, 0.0)
         aa, da = self.attack_.get(away, 0.0), self.defence_.get(away, 0.0)
@@ -260,7 +283,7 @@ class DixonColesModel:
     def score_matrix(self, home: str, away: str, neutral: bool = True) -> np.ndarray:
         """(max_goals+1) x (max_goals+1) probability matrix P[x, y] = P(home x, away y)."""
         lam, mu = self._lambdas(home, away, neutral)
-        P = np.outer(self._pois_pmf(lam), self._pois_pmf(mu))
+        P = np.outer(self._count_pmf(lam), self._count_pmf(mu))
         rho = self.rho
         P[0, 0] *= 1.0 - lam * mu * rho
         P[0, 1] *= 1.0 + lam * rho
@@ -268,8 +291,8 @@ class DixonColesModel:
         P[1, 1] *= 1.0 - rho
         np.clip(P, 0.0, None, out=P)
         total = P.sum()
-        if total <= 0:  # degenerate rho guard -> fall back to independent Poisson
-            P = np.outer(self._pois_pmf(lam), self._pois_pmf(mu))
+        if total <= 0:  # degenerate rho guard -> fall back to independent counts
+            P = np.outer(self._count_pmf(lam), self._count_pmf(mu))
             total = P.sum()
         return P / total
 
