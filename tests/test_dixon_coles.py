@@ -183,6 +183,47 @@ def test_walk_forward_dixon_coles_runs():
     assert 0.0 <= r["rps"] <= 1.0
 
 
+# --------------------------------------------------------------------------- #
+# Mean-preserving over-dispersion (Step 4 lever)
+# --------------------------------------------------------------------------- #
+def test_overdispersion_zero_is_poisson():
+    """The default (overdispersion=0) is byte-identical to the Poisson pmf — backward-compatible."""
+    m = models.DixonColesModel()
+    m.base_, m.home_adv_ = 0.3, 0.25
+    m.attack_, m.defence_ = {"X": 0.2, "Y": -0.1}, {"X": 0.1, "Y": -0.2}
+    m.rho = -0.05
+    assert m.overdispersion == 0.0
+    assert np.allclose(m._count_pmf(1.7), m._pois_pmf(1.7))
+    base = m.score_matrix("X", "Y", neutral=False)
+    m2 = models.DixonColesModel(overdispersion=0.0)
+    m2.base_, m2.home_adv_, m2.attack_, m2.defence_, m2.rho = m.base_, m.home_adv_, m.attack_, m.defence_, m.rho
+    assert np.allclose(base, m2.score_matrix("X", "Y", neutral=False))
+
+
+def test_overdispersion_preserves_mean_increases_variance():
+    """A>0 keeps the marginal mean (mean-preserving) but fattens the tail (higher variance)."""
+    k = np.arange(11)
+    lam = 1.8
+    pois = models.DixonColesModel(overdispersion=0.0)._count_pmf(lam)
+    nb = models.DixonColesModel(overdispersion=0.2)._count_pmf(lam)
+    # raw pmfs (score_matrix renormalises); truncation at max_goals trims a sliver of the tail
+    assert pois.sum() == pytest.approx(1.0, abs=1e-3)
+    assert nb.sum() == pytest.approx(1.0, abs=2e-3)
+    # same mean (mean-preserving), strictly larger variance
+    assert float(k @ nb) == pytest.approx(float(k @ pois), abs=2e-2)
+    var_p = float((k * k) @ pois) - (k @ pois) ** 2
+    var_n = float((k * k) @ nb) - (k @ nb) ** 2
+    assert var_n > var_p + 0.1
+
+
+def test_overdispersion_keeps_matrix_a_valid_distribution():
+    df, teams, _, _ = _history()
+    model = models.DixonColesModel(overdispersion=0.15).fit(df)
+    M = model.score_matrix(teams[0], teams[1], neutral=True)
+    assert M.sum() == pytest.approx(1.0)
+    assert (M >= 0).all()
+
+
 def test_fit_is_as_of_does_not_see_test_only_teams():
     # 'Ghost' appears only in the 2010 WC test fold; fitting on the pre-2010 train must not
     # learn it (proves fit consumes training rows only — as-of, no leakage).

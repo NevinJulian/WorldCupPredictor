@@ -53,6 +53,9 @@ _SNAP_DATE = pd.Timestamp("2027-01-01")    # strictly after every real fixture
 _ELO_HOME_ADV = 100.0                       # eloratings home advantage (elo.DEFAULT_HOME_ADV)
 # Blends DC net-strength (log-goal units) onto the Elo scale for the seeding/tiebreak strength.
 ELO_PER_DC_UNIT = 100.0
+# Adopted mean-preserving goals over-dispersion (Step 4 gate, reports/overdispersion_gate.md):
+# improves held-out total-goals / exact-score calibration while preserving E[goals] and W/D/L.
+DC_OVERDISPERSION = 0.15
 
 
 # --------------------------------------------------------------------------- #
@@ -240,6 +243,7 @@ def build_forecast_model(
     ensemble_kwargs: dict | None = None,
     rating_sigma: float = 0.0,
     confed_calibration: bool = True,
+    overdispersion: float = DC_OVERDISPERSION,
 ):
     """Fit the ensemble on all played data and assemble the 2026 `ForecastMatchModel`.
 
@@ -247,6 +251,10 @@ def build_forecast_model(
     0 (off) by default because the backtest does not support it (reports/sim_dispersion_2026.md).
     ``confed_calibration`` (ON by default) applies the per-confederation offset, which improves
     the walk-forward RPS and narrows the calibration gap (reports/confed_calibration_2026.md).
+    ``overdispersion`` (Dixon-Coles, ON at 0.15) fattens the scoreline tails toward real football
+    WITHOUT moving the mean; it is applied only to the score-matrix shape and the reweight restores
+    the ensemble W/D/L, so outcome/title odds are unchanged — only the scoreline spread is livelier
+    (gated on a goal-calibration backtest, reports/overdispersion_gate.md).
 
     Returns ``(model, sim_groups, display_to_data, info)``:
       * ``model``            — the ForecastMatchModel for `simulate_tournament`.
@@ -280,13 +288,25 @@ def build_forecast_model(
 
     team_confed = {t: confederation(t) for t in teams}
 
-    # Knockout layer: every ordered pair on neutral ground, scored by the ensemble (then the
-    # confederation offset, if on, before reweighting the Dixon-Coles scoreline matrix).
+    # H/D/A targets FIRST, from the Poisson ensemble (then the confederation offset, if on). The
+    # over-dispersion is applied only to the scoreline shape below, so these outcome probabilities —
+    # which the reweight restores — are computed before `dc` is over-dispersed and stay unchanged.
     pairs = [(a, b) for a in teams for b in teams if a != b]
     pair_probs = ens.predict_proba(assemble_pairs(snap, pairs))
     if calib is not None:
         pair_probs = calib.adjust(pair_probs, [team_confed[a] for a, _ in pairs],
                                   [team_confed[b] for _, b in pairs])
+    grp = feat[(feat["tournament"] == "FIFA World Cup") & (~feat["played"])
+               & feat["home_team"].isin(teams) & feat["away_team"].isin(teams)].copy()
+    grp_probs = ens.predict_proba(grp) if len(grp) else None
+    if grp_probs is not None and calib is not None:
+        grp_probs = calib.adjust(grp_probs, grp["home_confed"].to_numpy(), grp["away_confed"].to_numpy())
+
+    # Now turn on the goals-model over-dispersion: it only changes `dc.score_matrix` shape, never
+    # the fit or the H/D/A targets above, so outcome/title odds are unchanged (reweight keeps W/D/L).
+    dc.overdispersion = float(overdispersion)
+
+    # Knockout layer: every ordered pair on neutral ground, reweighted to its ensemble H/D/A target.
     matrices: dict[tuple[str, str], np.ndarray] = {}
     for (a, b), pr in zip(pairs, pair_probs):
         matrices[(a, b)] = reweight_to_outcome(dc.score_matrix(a, b, neutral=True), pr)
@@ -297,14 +317,8 @@ def build_forecast_model(
 
     # Group layer: the real fixtures override their neutral entries with the true venue
     # (host advantage). Both orderings are stored so the round-robin hits them either way.
-    grp = feat[(feat["tournament"] == "FIFA World Cup") & (~feat["played"])
-               & feat["home_team"].isin(teams) & feat["away_team"].isin(teams)].copy()
     n_group = 0
-    if len(grp):
-        grp_probs = ens.predict_proba(grp)
-        if calib is not None:
-            grp_probs = calib.adjust(grp_probs, grp["home_confed"].to_numpy(),
-                                     grp["away_confed"].to_numpy())
+    if grp_probs is not None:
         for (_, r), pr in zip(grp.iterrows(), grp_probs):
             h, a, neu = r["home_team"], r["away_team"], bool(r["neutral"])
             M = reweight_to_outcome(dc.score_matrix(h, a, neutral=neu), pr)
@@ -324,7 +338,7 @@ def build_forecast_model(
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),
             "n_group_fixtures": n_group, "unresolved": unresolved,
             "confed_offsets": dict(calib.offsets_) if calib is not None else {},
-            "neutral_matrices": neutral_matrices}
+            "overdispersion": float(overdispersion), "neutral_matrices": neutral_matrices}
     return model, sim_groups, display_to_data, info
 
 
