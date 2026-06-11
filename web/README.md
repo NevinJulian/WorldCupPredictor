@@ -22,8 +22,10 @@ Any static server works (`npx serve`, etc.) — the only requirement is HTTP, no
   scoreline, the top-3 scorelines, a win/draw/loss bar, and expected goals, read from the first
   team's perspective. Pairs are stored unordered, so the app flips the scoreline and swaps
   win/loss when it finds the reverse ordering.
-- **Tournament mode** — a labelled placeholder; advance/round/title odds and the chalk bracket
-  arrive in the next release.
+- **Tournament mode** — pick a simulation count (1k–100k); see title odds, 12 group cards with
+  advance / placement and fixtures, and the deterministic chalk bracket. Click any match for a
+  detail panel (top-3 scorelines, win/draw/loss, expected goals). Flags are bundled locally under
+  `flags/` (MIT flag-icons) so they render offline and on Windows where emoji flags don't.
 
 ## Regenerating the data
 
@@ -34,7 +36,19 @@ python scripts/09_export_web.py        # rewrites web/data/model_export.json
 The data contract (1128 game-mode pairs, the per-section fields the UI relies on) is guarded by
 `tests/test_web_contract.py` — run `pytest -q` after regenerating.
 
+## Live site
+
+**https://NevinJulian.github.io/WorldCupPredictor/**
+
 ## Deploy (GitHub Pages)
 
-Serve the repository's `web/` directory (e.g. Pages → *Deploy from a branch*, folder `/web`, or a
-Pages action). Because everything is static and `model_export.json` is committed, no build is needed.
+`.github/workflows/pages.yml` publishes `web/` to Pages on every push to `main` (and on a manual
+`workflow_dispatch`) via `upload-pages-artifact` + `deploy-pages`. **One-time setup:** in
+*Settings → Pages*, set **Source = "GitHub Actions"**.
+
+Notes:
+- `web/.nojekyll` disables Jekyll, which otherwise strips files beginning with `_` — so the
+  `_placeholder.svg` flag fallback would 404 without it.
+- A project Pages site serves under `/<repo>/`, so every asset/data path in the site is **relative**
+  (`data/model_export.json`, `flags/…`) — no absolute `/…` paths.
+- Everything is static and `model_export.json` + the flags are committed, so no build runs.
