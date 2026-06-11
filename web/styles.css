@@ -521,7 +521,7 @@ main { flex: 1; padding-top: clamp(20px, 4vw, 36px); }
   .bx-wide {
     display: flex; align-items: stretch; gap: 0;
     overflow: hidden;            /* structural guarantee: the tree never scrolls sideways */
-    min-height: 460px;
+    min-height: 540px;
   }
   .bx-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
   .bx-col__title {
@@ -601,6 +601,30 @@ body.modal-open { overflow: hidden; }
   .picker__vs { padding-bottom: 13px; }
   .tour-controls { flex-direction: column; align-items: flex-start; }
 }
+/* ======================================================================== */
+/* xG + probability on every match (Step 2)                                  */
+/* ======================================================================== */
+/* headline: "most likely · NN%" (label) + big score + an xG sub-line */
+.scoreboard__xg {
+  display: block; margin-top: 6px;
+  font-family: var(--display); font-weight: 600; font-size: .74rem;
+  letter-spacing: .04em; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+
+/* group fixtures: stack the modal score over a small xG line */
+.gfix__sc { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.gfix__xg {
+  font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* bracket ties: a labelled xG line under the two team rows */
+.bx-xg {
+  margin-top: 3px; text-align: center;
+  font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+.bx-tall .bx-xg { font-size: .68rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, .view.is-active, .result, .modal__dialog { animation: none !important; transition: none !important; }
 }
