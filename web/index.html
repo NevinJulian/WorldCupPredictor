@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>World Cup 2026 — Forecast</title>
+  <meta name="description" content="A Monte-Carlo forecast of the FIFA World Cup 2026, trained on every international since 1872." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="masthead__brand">
+        <span class="masthead__kicker">Monte-Carlo forecast</span>
+        <h1 class="masthead__title">World Cup <span>2026</span></h1>
+        <p class="masthead__sub">Every international since 1872 · 48 teams · Canada · Mexico · USA</p>
+      </div>
+      <nav class="modeswitch" role="tablist" aria-label="View mode">
+        <button class="modeswitch__btn is-active" id="mode-game" role="tab" aria-selected="true">Game</button>
+        <button class="modeswitch__btn" id="mode-tournament" role="tab" aria-selected="false">Tournament</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- ===================== GAME MODE ===================== -->
+      <section class="view is-active" id="view-game" aria-labelledby="mode-game">
+        <div class="picker">
+          <label class="picker__side">
+            <span class="picker__label">Team one</span>
+            <select id="team1" class="select" aria-label="Team one"></select>
+          </label>
+          <div class="picker__vs" aria-hidden="true">vs</div>
+          <label class="picker__side">
+            <span class="picker__label">Team two</span>
+            <select id="team2" class="select" aria-label="Team two"></select>
+          </label>
+        </div>
+        <p class="picker__hint">Neutral venue. Probabilities read from <strong id="persp-name">team one</strong>'s perspective.</p>
+
+        <!-- same-team / empty notice -->
+        <div class="notice" id="notice" hidden></div>
+
+        <!-- result -->
+        <div class="result" id="result" hidden>
+          <div class="scoreboard">
+            <div class="scoreboard__team scoreboard__team--home">
+              <span class="scoreboard__name" id="sb-home-name">—</span>
+              <span class="confed-tag" id="sb-home-confed"></span>
+            </div>
+            <div class="scoreboard__score">
+              <span class="scoreboard__label">most likely</span>
+              <span class="scoreboard__digits" id="sb-score">0–0</span>
+            </div>
+            <div class="scoreboard__team scoreboard__team--away">
+              <span class="scoreboard__name" id="sb-away-name">—</span>
+              <span class="confed-tag" id="sb-away-confed"></span>
+            </div>
+          </div>
+
+          <div class="wdl">
+            <div class="wdl__bar" role="img" id="wdl-bar" aria-label="Win / draw / loss probabilities">
+              <span class="wdl__seg wdl__seg--win" id="wdl-win"></span>
+              <span class="wdl__seg wdl__seg--draw" id="wdl-draw"></span>
+              <span class="wdl__seg wdl__seg--loss" id="wdl-loss"></span>
+            </div>
+            <div class="wdl__legend">
+              <span class="wdl__key"><i class="dot dot--win"></i><b id="lab-win">—</b> <span id="lab-win-team">win</span></span>
+              <span class="wdl__key"><i class="dot dot--draw"></i><b id="lab-draw">—</b> draw</span>
+              <span class="wdl__key"><i class="dot dot--loss"></i><b id="lab-loss">—</b> <span id="lab-loss-team">loss</span></span>
+            </div>
+          </div>
+
+          <div class="cards">
+            <article class="card card--xg">
+              <h3 class="card__title">Expected goals</h3>
+              <div class="xg">
+                <div class="xg__row"><span class="xg__team" id="xg-home-name">—</span><span class="xg__val" id="xg-home">0.0</span></div>
+                <div class="xg__row"><span class="xg__team" id="xg-away-name">—</span><span class="xg__val" id="xg-away">0.0</span></div>
+              </div>
+            </article>
+            <article class="card card--top">
+              <h3 class="card__title">Most-likely scorelines</h3>
+              <ol class="top3" id="top3"></ol>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== TOURNAMENT (placeholder) ===================== -->
+      <section class="view" id="view-tournament" aria-labelledby="mode-tournament" hidden>
+        <div class="placeholder">
+          <div class="placeholder__badge">Coming soon</div>
+          <h2>Tournament view</h2>
+          <p>Advance, round and title odds for all 48 teams — plus the chalk bracket — land in the next release.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="foot-meta">Loading model…</span>
+      <span class="footer__note">Probabilistic forecast — not betting advice.</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
