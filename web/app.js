@@ -103,15 +103,18 @@
 
   // Neutral head-to-head from t1's perspective (the 1128-pair lookup + unordered flip).
   function neutralMatch(t1, t2) {
+    // total-goals fields (pOver25, goalTotals) are perspective-symmetric, so they copy as-is
     var d = state.pairs.get(t1 + "|" + t2);
     if (d) return {
       score: parseScore(d.modal), pWin: d.p_home, pDraw: d.p_draw, pLoss: d.p_away,
-      e1: d.e_home, e2: d.e_away, top: d.top.map(function (t) { return { score: parseScore(t[0]), p: t[1] }; })
+      e1: d.e_home, e2: d.e_away, top: d.top.map(function (t) { return { score: parseScore(t[0]), p: t[1] }; }),
+      pOver25: d.p_over25, goalTotals: d.goal_totals
     };
     var r = state.pairs.get(t2 + "|" + t1);
     if (r) return {
       score: flip(parseScore(r.modal)), pWin: r.p_away, pDraw: r.p_draw, pLoss: r.p_home,
-      e1: r.e_away, e2: r.e_home, top: r.top.map(function (t) { return { score: flip(parseScore(t[0])), p: t[1] }; })
+      e1: r.e_away, e2: r.e_home, top: r.top.map(function (t) { return { score: flip(parseScore(t[0])), p: t[1] }; }),
+      pOver25: r.p_over25, goalTotals: r.goal_totals
     };
     return null;
   }
@@ -119,7 +122,8 @@
   function fixtureMatch(fx) {
     return {
       score: parseScore(fx.modal), pWin: fx.p_home, pDraw: fx.p_draw, pLoss: fx.p_away,
-      e1: fx.e_home, e2: fx.e_away, top: fx.top.map(function (t) { return { score: parseScore(t[0]), p: t[1] }; })
+      e1: fx.e_home, e2: fx.e_away, top: fx.top.map(function (t) { return { score: parseScore(t[0]), p: t[1] }; }),
+      pOver25: fx.p_over25, goalTotals: fx.goal_totals
     };
   }
 
@@ -140,8 +144,36 @@
     var cards = el("div", "cards");
     cards.appendChild(buildXG(home, away, m));
     cards.appendChild(buildTop3(m.top));
+    if (m.goalTotals) cards.appendChild(buildTotals(m));
     frag.appendChild(cards);
     return frag;
+  }
+  // Total-goals card: P(over 2.5) headline + a P(0,1,2,3,4,5+) bar (over-2.5 buckets tinted).
+  function buildTotals(m) {
+    var card = el("div", "card card--totals");
+    card.appendChild(el("h3", "card__title", "Total goals"));
+    if (m.pOver25 != null) {
+      var over = el("div", "totals__over");
+      over.appendChild(el("b", null, pct(m.pOver25)));
+      over.appendChild(document.createTextNode(" over 2.5 goals"));
+      card.appendChild(over);
+    }
+    var labels = ["0", "1", "2", "3", "4", "5+"];
+    var maxP = m.goalTotals.reduce(function (a, x) { return Math.max(a, x); }, 0) || 1;
+    var chart = el("div", "gt");
+    m.goalTotals.forEach(function (p, i) {
+      var row = el("div", "gt__row");
+      row.appendChild(el("span", "gt__k", labels[i]));
+      var track = el("div", "gt__track");
+      var fill = el("div", "gt__fill" + (i >= 3 ? " gt__fill--over" : ""));
+      fill.style.width = (100 * p / maxP) + "%";
+      track.appendChild(fill);
+      row.appendChild(track);
+      row.appendChild(el("span", "gt__pct", pct(p)));
+      chart.appendChild(row);
+    });
+    card.appendChild(chart);
+    return card;
   }
   function scoreTeam(team, side) {
     var t = el("div", "scoreboard__team scoreboard__team--" + side);

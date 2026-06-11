@@ -625,6 +625,20 @@ body.modal-open { overflow: hidden; }
 }
 .bx-tall .bx-xg { font-size: .68rem; }
 
+/* ---- Total-goals card (Step 3) ---- */
+.totals__over { font-size: .92rem; color: var(--muted); margin-bottom: 12px; }
+.totals__over b { color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 1.1rem; }
+.gt { display: flex; flex-direction: column; gap: 7px; }
+.gt__row { display: grid; grid-template-columns: 1.4rem 1fr 2.6rem; align-items: center; gap: 9px; }
+.gt__k {
+  font-family: var(--display); font-weight: 700; font-size: .82rem; color: var(--muted);
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.gt__track { height: 9px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.gt__fill { height: 100%; background: var(--muted); border-radius: 999px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.gt__fill--over { background: var(--accent); }     /* 3, 4, 5+ = "over 2.5" */
+.gt__pct { text-align: right; color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
+
 @media (prefers-reduced-motion: reduce) {
   *, .view.is-active, .result, .modal__dialog { animation: none !important; transition: none !important; }
 }
