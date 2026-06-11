@@ -41,62 +41,30 @@
         </div>
         <p class="picker__hint">Neutral venue. Probabilities read from <strong id="persp-name">team one</strong>'s perspective.</p>
 
-        <!-- same-team / empty notice -->
-        <div class="notice" id="notice" hidden></div>
-
-        <!-- result -->
-        <div class="result" id="result" hidden>
-          <div class="scoreboard">
-            <div class="scoreboard__team scoreboard__team--home">
-              <span class="scoreboard__name" id="sb-home-name">—</span>
-              <span class="confed-tag" id="sb-home-confed"></span>
-            </div>
-            <div class="scoreboard__score">
-              <span class="scoreboard__label">most likely</span>
-              <span class="scoreboard__digits" id="sb-score">0–0</span>
-            </div>
-            <div class="scoreboard__team scoreboard__team--away">
-              <span class="scoreboard__name" id="sb-away-name">—</span>
-              <span class="confed-tag" id="sb-away-confed"></span>
-            </div>
-          </div>
-
-          <div class="wdl">
-            <div class="wdl__bar" role="img" id="wdl-bar" aria-label="Win / draw / loss probabilities">
-              <span class="wdl__seg wdl__seg--win" id="wdl-win"></span>
-              <span class="wdl__seg wdl__seg--draw" id="wdl-draw"></span>
-              <span class="wdl__seg wdl__seg--loss" id="wdl-loss"></span>
-            </div>
-            <div class="wdl__legend">
-              <span class="wdl__key"><i class="dot dot--win"></i><b id="lab-win">—</b> <span id="lab-win-team">win</span></span>
-              <span class="wdl__key"><i class="dot dot--draw"></i><b id="lab-draw">—</b> draw</span>
-              <span class="wdl__key"><i class="dot dot--loss"></i><b id="lab-loss">—</b> <span id="lab-loss-team">loss</span></span>
-            </div>
-          </div>
-
-          <div class="cards">
-            <article class="card card--xg">
-              <h3 class="card__title">Expected goals</h3>
-              <div class="xg">
-                <div class="xg__row"><span class="xg__team" id="xg-home-name">—</span><span class="xg__val" id="xg-home">0.0</span></div>
-                <div class="xg__row"><span class="xg__team" id="xg-away-name">—</span><span class="xg__val" id="xg-away">0.0</span></div>
-              </div>
-            </article>
-            <article class="card card--top">
-              <h3 class="card__title">Most-likely scorelines</h3>
-              <ol class="top3" id="top3"></ol>
-            </article>
-          </div>
-        </div>
+        <div class="notice" id="game-notice" hidden></div>
+        <div id="game-result" hidden></div>
       </section>
 
-      <!-- ===================== TOURNAMENT (placeholder) ===================== -->
+      <!-- ===================== TOURNAMENT ===================== -->
       <section class="view" id="view-tournament" aria-labelledby="mode-tournament" hidden>
-        <div class="placeholder">
-          <div class="placeholder__badge">Coming soon</div>
-          <h2>Tournament view</h2>
-          <p>Advance, round and title odds for all 48 teams — plus the chalk bracket — land in the next release.</p>
+        <div class="tour-controls">
+          <div class="nsel" role="group" aria-label="Number of simulations">
+            <span class="nsel__label">Simulations</span>
+            <div class="nsel__btns" id="nsel-btns"></div>
+          </div>
+          <p class="tour-note">Odds stabilise above ~20,000 simulations; lower counts are noisier.</p>
         </div>
+
+        <h2 class="section-title">Title odds <span class="section-title__sub" id="title-n"></span></h2>
+        <div class="title-odds" id="title-odds"></div>
+
+        <h2 class="section-title">Group stage</h2>
+        <p class="section-hint">Advance / win-group / runner-up / third at the selected N. Click a fixture for its scoreline detail.</p>
+        <div class="groups-grid" id="groups-grid"></div>
+
+        <h2 class="section-title">Knockout — chalk bracket</h2>
+        <p class="section-hint">The deterministic favourites-hold path (higher win probability advances), <em>not</em> a probability. Click a tie for detail.</p>
+        <div class="bracket" id="bracket"></div>
       </section>
     </main>
 
@@ -104,6 +72,16 @@
       <span id="foot-meta">Loading model…</span>
       <span class="footer__note">Probabilistic forecast — not betting advice.</span>
     </footer>
+  </div>
+
+  <!-- ===================== SHARED DETAIL PANEL (modal) ===================== -->
+  <div class="modal" id="detail-modal" hidden>
+    <div class="modal__backdrop" id="detail-backdrop"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" id="detail-dialog">
+      <button class="modal__close" id="detail-close" aria-label="Close detail">×</button>
+      <span class="modal__kicker" id="detail-title">Match detail</span>
+      <div id="detail-body"></div>
+    </div>
   </div>
 
   <script src="app.js"></script>

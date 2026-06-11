@@ -92,3 +92,41 @@ def test_tournament_levels_and_reach_fields(data):
     # chalk bracket present and complete (31 ties)
     ch = tour["chalk"]
     assert ch["champion"] and len(ch["bracket"]) == 31
+
+
+# --------------------------------------------------------------------------- #
+# Flags — every team resolves to a bundled SVG (the UI shows flags everywhere)
+# --------------------------------------------------------------------------- #
+_FLAGS_DIR = ROOT / "web" / "flags"
+_FLAGS_MAP = _FLAGS_DIR / "flags.json"
+
+# The non-trivial codes the UI must get right (subdivisions / spelling).
+_TRICKY = {
+    "England": "gb-eng", "Scotland": "gb-sct", "Curaçao": "cw", "Cape Verde": "cv",
+    "DR Congo": "cd", "Ivory Coast": "ci", "South Korea": "kr", "United States": "us",
+    "Türkiye": "tr", "Uzbekistan": "uz", "Bosnia and Herzegovina": "ba",
+}
+
+
+def test_every_team_has_a_bundled_flag(data):
+    assert _FLAGS_MAP.exists(), "web/flags/flags.json missing"
+    fmap = json.loads(_FLAGS_MAP.read_text(encoding="utf-8"))
+    teams = [t for ts in data["structure"]["groups"].values() for t in ts]
+    for t in teams:
+        assert t in fmap, f"no flag mapping for team '{t}'"
+        iso = fmap[t]
+        assert (_FLAGS_DIR / (iso + ".svg")).exists(), f"missing flag SVG for {t} ({iso}.svg)"
+    # the tricky ones are mapped exactly as required
+    for team, iso in _TRICKY.items():
+        assert fmap.get(team) == iso, f"{team} should map to {iso}, got {fmap.get(team)}"
+    # a neutral placeholder exists for the fallback path
+    assert (_FLAGS_DIR / "_placeholder.svg").exists()
+
+
+def test_flag_map_has_no_dangling_entries(data):
+    """Every flag mapping points at a real SVG and a real team (no rot)."""
+    fmap = json.loads(_FLAGS_MAP.read_text(encoding="utf-8"))
+    teams = set(t for ts in data["structure"]["groups"].values() for t in ts)
+    for team, iso in fmap.items():
+        assert team in teams, f"flags.json has unknown team '{team}'"
+        assert (_FLAGS_DIR / (iso + ".svg")).exists(), f"flags.json -> missing {iso}.svg"

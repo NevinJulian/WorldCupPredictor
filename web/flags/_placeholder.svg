@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="flag unavailable">
+  <rect width="640" height="480" fill="#d8d2c4"/>
+  <circle cx="320" cy="240" r="118" fill="none" stroke="#a8a294" stroke-width="22"/>
+  <path d="M202 240h236M320 122v236" stroke="#a8a294" stroke-width="22"/>
+</svg>
