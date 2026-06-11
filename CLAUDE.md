@@ -36,6 +36,7 @@ python scripts/01_download.py              # core data -> data/raw/ (no API key;
 python scripts/02_build_features.py        # -> data/processed/match_features.parquet (+ current_elo.csv, sample CSV)
 python scripts/03_make_2026.py [--sims N]  # -> wc2026_group_fixtures.csv, wc2026_odds.csv (Elo-baseline forecast)
 python scripts/08_forecast_2026.py [--sims N]  # -> wc2026_forecast_odds.csv (the real forecast: ensemble + Annex-C bracket)
+python scripts/09_export_web.py [--sims-max N] # -> web/data/model_export.json (game-mode pairs, group fixtures, tournament odds + chalk; for the web UI)
 # scripts 04-07 fit/score the models -> data/processed/*_rps.json; gen_annexc_table.py rebuilds config/annexc_r32.csv (needs network)
 
 # Tests (synthetic data, no network)
@@ -64,6 +65,7 @@ Module map ([src/wcpred/](src/wcpred/)):
 - `tournament.py` — Monte-Carlo simulator for the 2026 format with FIFA's real **Annex-C** R32 bracket (so it requires the 12 groups A-L). `simulate_tournament(groups, model, n_sims)` returns per-team advance/round/title probabilities; `EloMatchModel` is the baseline stand-in. `load_annexc()`/`r32_matchups()` expose the bracket.
 - `forecast.py` — assembles the real 2026 forecast match model (`ForecastMatchModel`: Dixon-Coles scorelines reweighted to the ensemble's H/D/A) and feeds it to `simulate_tournament`. The group stage uses the real in-data fixtures with host advantage; knockout pairs are scored neutral from a leakage-free per-team form snapshot.
 - `confederations.py` / `squad.py` — team→confederation lookup; Transfermarkt squad-value/injury scraper (modern subset only).
+- `webexport.py` — serialises the shipped forecast to `web/data/model_export.json` for a static web UI (game-mode neutral pairs, the 72 group fixtures, tournament odds at N∈{1k,10k,50k,100k} + the chalk bracket, Annex-C metadata). Reporting only — reads the fitted model, no refit. `build_forecast_model`'s `info` now also carries `neutral_matrices` (the pre-group-overwrite all-neutral matrices) so game mode can score every pair at a neutral venue.
 
 ### Non-negotiable invariants
 

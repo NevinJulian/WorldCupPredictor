@@ -290,6 +290,10 @@ def build_forecast_model(
     matrices: dict[tuple[str, str], np.ndarray] = {}
     for (a, b), pr in zip(pairs, pair_probs):
         matrices[(a, b)] = reweight_to_outcome(dc.score_matrix(a, b, neutral=True), pr)
+    # Snapshot the all-neutral matrices before the group layer overwrites the real-fixture
+    # orderings — purely for reporting (e.g. a neutral-venue "game mode"); the model itself is
+    # unaffected. Shallow copy is safe: reweight makes fresh arrays, none are mutated in place.
+    neutral_matrices = dict(matrices)
 
     # Group layer: the real fixtures override their neutral entries with the true venue
     # (host advantage). Both orderings are stored so the round-robin hits them either way.
@@ -319,7 +323,8 @@ def build_forecast_model(
     display_to_data = dict(zip(g["team_data"], g["team"]))
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),
             "n_group_fixtures": n_group, "unresolved": unresolved,
-            "confed_offsets": dict(calib.offsets_) if calib is not None else {}}
+            "confed_offsets": dict(calib.offsets_) if calib is not None else {},
+            "neutral_matrices": neutral_matrices}
     return model, sim_groups, display_to_data, info
 
 
