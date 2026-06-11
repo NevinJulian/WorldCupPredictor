@@ -178,7 +178,7 @@ def test_group_fixtures_match_frozen_forecast():
 @pytest.mark.skipif(not _EXPORT.exists(), reason="web/data/model_export.json not generated yet")
 def test_export_shape_and_metadata():
     export = json.loads(_EXPORT.read_text(encoding="utf-8"))
-    assert export["metadata"]["model_version"] == "0.2.0"
+    assert export["metadata"]["model_version"] == "0.3.0"
     assert export["metadata"]["confed_calibration"] is True
     assert len(export["game_mode"]) == 48 * 47 // 2            # C(48,2) unordered pairs
     assert set(export["tournament"]["by_n"]) == {"1000", "10000", "50000", "100000"}

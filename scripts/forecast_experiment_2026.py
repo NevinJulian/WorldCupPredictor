@@ -111,17 +111,19 @@ def main(n_sims: int = N_SIMS) -> int:
             "as_of": as_of, "generated": datetime.date.today().isoformat(),
             "n_sims": n_sims, "seed": SEED, "scenario_seed": SCENARIO_SEED,
             "convergence_seeds": list(CONVERGENCE_SEEDS),
-            "model": "ForecastMatchModel (Dixon-Coles scorelines reweighted to the GBM+DC ensemble "
-                     "H/D/A, with per-confederation calibration), Annex-C bracket",
+            "model": "ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the "
+                     "GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket",
             "model_version": wcpred.__version__, "rating_sigma": float(model.rating_sigma),
-            "confed_calibration": True,
+            "confed_calibration": True, "overdispersion": round(float(info["overdispersion"]), 3),
             "confed_offsets": {k: round(v, 4) for k, v in info["confed_offsets"].items()},
             "ensemble_weight_gbm": round(info["ensemble_weight"], 3),
             "n_group_fixtures": info["n_group_fixtures"], "n_pairs": info["n_pairs"],
             "se_formula": "binomial sqrt(p(1-p)/N)",
             "note": "A single fixed-seed Monte Carlo; runs are NOT averaged. The scenario is ONE "
-                    "realization, not the mean. As of model v0.2.0 the forecast applies the "
-                    "leakage-safe per-confederation calibration (reports/confed_calibration_2026.md).",
+                    "realization, not the mean. As of model v0.3.0 the forecast applies the "
+                    "leakage-safe per-confederation calibration (reports/confed_calibration_2026.md) "
+                    "and a mean-preserving goals over-dispersion (reports/overdispersion_gate.md): "
+                    "livelier scorelines, same E[goals] and W/D/L, so title odds are unchanged.",
         },
         "teams": teams_json, "fixtures": fixtures_json,
         "convergence_title": convergence_json, "scenario": scenario_json,
