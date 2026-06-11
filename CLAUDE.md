@@ -37,6 +37,7 @@ python scripts/02_build_features.py        # -> data/processed/match_features.pa
 python scripts/03_make_2026.py [--sims N]  # -> wc2026_group_fixtures.csv, wc2026_odds.csv (Elo-baseline forecast)
 python scripts/08_forecast_2026.py [--sims N]  # -> wc2026_forecast_odds.csv (the real forecast: ensemble + Annex-C bracket)
 python scripts/09_export_web.py [--sims-max N] # -> web/data/model_export.json (game-mode pairs, group fixtures, tournament odds + chalk; for the web UI)
+# Static web UI (no framework/build): cd web && python -m http.server  -> http://localhost:8000/  (see web/README.md)
 # scripts 04-07 fit/score the models -> data/processed/*_rps.json; gen_annexc_table.py rebuilds config/annexc_r32.csv (needs network)
 
 # Tests (synthetic data, no network)
