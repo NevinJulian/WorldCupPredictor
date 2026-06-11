@@ -129,8 +129,10 @@
     var sb = el("div", "scoreboard");
     sb.appendChild(scoreTeam(home, "home"));
     var sc = el("div", "scoreboard__score");
-    sc.appendChild(el("span", "scoreboard__label", "most likely"));
+    var p1 = (m.top && m.top[0]) ? m.top[0].p : null;       // top-1 scoreline probability
+    sc.appendChild(el("span", "scoreboard__label", p1 != null ? "most likely · " + pct(p1) : "most likely"));
     sc.appendChild(el("span", "scoreboard__digits", m.score[0] + "–" + m.score[1]));
+    sc.appendChild(el("span", "scoreboard__xg", "xG " + m.e1.toFixed(1) + " – " + m.e2.toFixed(1)));
     sb.appendChild(sc);
     sb.appendChild(scoreTeam(away, "away"));
     frag.appendChild(sb);
@@ -316,8 +318,11 @@
       var fl = el("div", "gfix");
       (fbg[g] || []).forEach(function (fx) {
         var row = el("button", "gfix__row");
+        var scoreCell = el("div", "gfix__sc");
+        scoreCell.appendChild(el("span", "gfix__score", scoreText(fx.modal)));
+        scoreCell.appendChild(el("span", "gfix__xg", "xG " + fx.e_home.toFixed(1) + "–" + fx.e_away.toFixed(1)));
         row.appendChild(miniTeam(fx.home, false));
-        row.appendChild(el("span", "gfix__score", scoreText(fx.modal)));
+        row.appendChild(scoreCell);
         row.appendChild(miniTeam(fx.away, true));
         row.addEventListener("click", function () { openDetail(fixtureMatch(fx), fx.home, fx.away, "Group " + g); });
         fl.appendChild(row);
@@ -352,15 +357,14 @@
   // --- shared compact tie card (flag + 3-letter code + per-team goals; winner highlighted) ---
   function bracketTie(t) {
     var sc = parseScore(t.modal);
+    var m = neutralMatch(t.home, t.away);   // neutral tie: source of xG + the detail panel
     var tie = el("button", "bx-tie");
     tie.appendChild(bxRow(t, t.home, sc[0]));
     tie.appendChild(bxRow(t, t.away, sc[1]));
+    if (m) tie.appendChild(el("div", "bx-xg", "xG " + m.e1.toFixed(1) + "–" + m.e2.toFixed(1)));
     tie.setAttribute("aria-label",
       t.home + " " + sc[0] + "–" + sc[1] + " " + t.away + "; " + t.winner + " advance");
-    tie.addEventListener("click", function () {
-      var m = neutralMatch(t.home, t.away);
-      if (m) openDetail(m, t.home, t.away, ROUND_NAME[t.round] || t.round);
-    });
+    tie.addEventListener("click", function () { if (m) openDetail(m, t.home, t.away, ROUND_NAME[t.round] || t.round); });
     return tie;
   }
   function bxRow(t, team, goals) {
