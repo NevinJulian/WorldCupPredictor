@@ -23,7 +23,7 @@ def data():
 # --------------------------------------------------------------------------- #
 def test_metadata_has_version_and_as_of(data):
     md = data["metadata"]
-    assert md["model_version"] == "0.2.0"
+    assert md["model_version"] == "0.3.0"
     assert isinstance(md["as_of"], str) and md["as_of"]          # footer shows this
     assert md["confed_calibration"] is True
 

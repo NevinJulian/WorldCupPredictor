@@ -182,17 +182,20 @@ def build_payload(model, sim_groups, display, info, matches, *,
 
     as_of = str(matches.loc[matches["played"], "date"].max().date())
     metadata = {
-        "model": "ForecastMatchModel (Dixon-Coles scorelines reweighted to the GBM+DC ensemble "
-                 "H/D/A, with per-confederation calibration), Annex-C bracket",
+        "model": "ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the "
+                 "GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket",
         "model_version": version, "as_of": as_of,
         "generated": generated or datetime.date.today().isoformat(),
         "confed_calibration": True, "rating_sigma": float(model.rating_sigma),
+        "overdispersion": round(float(info.get("overdispersion", 0.0)), 3),
         "tournament_seed": seed, "tournament_levels": list(levels),
         "rounding": {"prob_dp": PROB_DP, "expected_goals_dp": EG_DP},
-        "note": "Reporting export of the shipped v0.2.0 model (no refit). Game mode is neutral-venue; "
-                "group stage uses each fixture's true venue and matches forecast_2026.json. Tournament "
-                "odds reuse forecast.run_probabilities at one fixed seed across N (not averaged); the "
-                "chalk bracket is the deterministic favourites-hold path, NOT a probability.",
+        "note": f"Reporting export of the shipped v{version} model (no refit). Game mode is "
+                "neutral-venue; group stage uses each fixture's true venue and matches "
+                "forecast_2026.json. The goals model is over-dispersed (livelier scorelines, same "
+                "E[goals] and W/D/L). Tournament odds reuse forecast.run_probabilities at one fixed "
+                "seed across N (not averaged); the chalk bracket is the deterministic favourites-hold "
+                "path, NOT a probability.",
     }
     return {
         "metadata": metadata,

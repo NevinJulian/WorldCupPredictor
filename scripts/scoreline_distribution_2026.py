@@ -47,8 +47,8 @@ def main() -> int:
         "# WC 2026 — scoreline distributions & the chalk bracket",
         "",
         f"*Reporting over the shipped ForecastMatchModel (v{wcpred.__version__}, rating_sigma=0, "
-        f"per-confederation calibration on). As-of {as_of}; generated "
-        f"{datetime.date.today().isoformat()}. Reporting only.*",
+        f"per-confederation calibration on, goals over-dispersion {info['overdispersion']:.2f}). "
+        f"As-of {as_of}; generated {datetime.date.today().isoformat()}. Reporting only.*",
         "",
         "## 1. Group-fixture scoreline distributions",
         "",
