@@ -4,7 +4,7 @@
 
 Scorelines come from Dixon-Coles, reweighted so each match's H/D/A marginals match the
 calibrated ensemble (GBM + DC) outcome probabilities — so the sim inherits the outcome edge
-(the ensemble's normalized RPS is 0.2036 vs DC-alone 0.2147). The group stage uses the real
+(the ensemble's normalized RPS is 0.2044 vs DC-alone 0.2128). The group stage uses the real
 2026 fixtures (with host advantage); knockout pairs are scored on neutral ground.
 
 The knockout bracket is FIFA's real Annex-C R32 slotting (495-combination third-place table)

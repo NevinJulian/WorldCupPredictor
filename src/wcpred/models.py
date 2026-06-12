@@ -122,7 +122,9 @@ class DixonColesModel:
 
     **Fitting** maximises a recency-weighted likelihood: match `m` gets weight
     ``exp(-ln2 * age_days / half_life_days)`` relative to the most recent training match, so
-    form a year or two old counts for half. Strengths (base, home_adv, attack, defence) are
+    form half a half-life old counts for half (the default half-life is ~5 years — chosen on the
+    broadened competitive-internationals backtest, reports/eval_and_decay.md). Strengths (base,
+    home_adv, attack, defence) are
     fit first by weighted Poisson MLE with an L2 ridge; `rho` is then fit by a 1-D MLE with
     the strengths held fixed (the ridge-free, near-identical Dixon-Coles factorisation — the
     correction barely moves the strength estimates but materially improves low scores).
@@ -144,7 +146,7 @@ class DixonColesModel:
 
     def __init__(
         self,
-        half_life_days: float = 547.0,   # ~1.5 years
+        half_life_days: float = 1825.0,  # ~5 years (reports/eval_and_decay.md)
         reg: float = 5.0,                # ridge strength -> cold-start shrinkage
         max_goals: int = 10,
         rho_bounds: tuple[float, float] = (-0.2, 0.2),
@@ -336,6 +338,58 @@ def walk_forward_dixon_coles(
         y_true = test["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
         rows.append({"year": year, "n": int(len(test)), "rps": metrics.rps(proba, y_true)})
     return rows
+
+
+# --------------------------------------------------------------------------- #
+# Broad block backtest — the larger, lower-variance evaluator
+# --------------------------------------------------------------------------- #
+# The WC-finals walk-forward above is the product-relevance metric, but ~256 matches is too
+# noisy to detect small modelling changes. This refits a model at yearly checkpoints and
+# predicts the whole next year from prior data only, then pools the predictions so they can be
+# sliced by competitiveness tier (datasets.competition_class). Far more matches -> far lower
+# variance, so a real improvement on competitive internationals is actually visible.
+def walk_forward_block_predictions(
+    df: pd.DataFrame, model_factory, years: range, *, min_train: int = 2000
+) -> pd.DataFrame:
+    """Pooled, as-of H/D/A predictions from an expanding-window yearly-refit block backtest.
+
+    ``model_factory()`` returns a fresh, unfitted model exposing ``.fit(train_df)`` and
+    ``.predict_proba(df) -> (n, 3)`` in H,D,A order. For each yearly checkpoint
+    (datasets.walk_forward_blocks: train strictly before the year, block = that year) a fresh
+    model is fit and used to predict the block; every played match in the span is therefore
+    predicted exactly once, from its own past. Returns the concatenated block rows with added
+    ``pH``/``pD``/``pA`` columns and a ``comp_class`` tier label.
+    """
+    frames: list[pd.DataFrame] = []
+    for _year, train, block in datasets.walk_forward_blocks(df, years, min_train=min_train):
+        proba = model_factory().fit(train).predict_proba(block)
+        b = block.copy()
+        b[["pH", "pD", "pA"]] = proba
+        frames.append(b)
+    if not frames:
+        raise ValueError("walk_forward_block_predictions produced no folds (check years/min_train).")
+    pooled = pd.concat(frames, ignore_index=True)
+    pooled["comp_class"] = datasets.competition_class(pooled)
+    return pooled
+
+
+def block_rps_by_class(pooled: pd.DataFrame) -> dict:
+    """Normalized RPS over the pooled block predictions, overall and per competitiveness tier.
+
+    Consumes the frame from `walk_forward_block_predictions`. Returns
+    ``{"all": {...}, "competitive": {...}, "friendly": {...}, "other": {...}}`` with each value
+    ``{"rps", "n"}`` (a tier with no matches is omitted). 'competitive' is metric (a), 'all' is
+    metric (b); the WC-finals-only metric (c) stays the existing walk_forward_* helper.
+    """
+    P = pooled[["pH", "pD", "pA"]].to_numpy(dtype=float)
+    y = pooled["result"].map(datasets.RESULT_TO_INT).astype(int).to_numpy()
+    out = {"all": {"rps": metrics.rps(P, y), "n": int(len(y))}}
+    cls = pooled["comp_class"].to_numpy()
+    for tier in ("competitive", "friendly", "other"):
+        mask = cls == tier
+        if mask.any():
+            out[tier] = {"rps": metrics.rps(P[mask], y[mask]), "n": int(mask.sum())}
+    return out
 
 
 # --------------------------------------------------------------------------- #

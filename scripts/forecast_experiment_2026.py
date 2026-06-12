@@ -120,10 +120,12 @@ def main(n_sims: int = N_SIMS) -> int:
             "n_group_fixtures": info["n_group_fixtures"], "n_pairs": info["n_pairs"],
             "se_formula": "binomial sqrt(p(1-p)/N)",
             "note": "A single fixed-seed Monte Carlo; runs are NOT averaged. The scenario is ONE "
-                    "realization, not the mean. As of model v0.3.0 the forecast applies the "
-                    "leakage-safe per-confederation calibration (reports/confed_calibration_2026.md) "
-                    "and a mean-preserving goals over-dispersion (reports/overdispersion_gate.md): "
-                    "livelier scorelines, same E[goals] and W/D/L, so title odds are unchanged.",
+                    "realization, not the mean. As of model v0.4.0 the Dixon-Coles strength "
+                    "half-life is 5 years (reports/eval_and_decay.md), chosen on a broadened "
+                    "competitive-internationals backtest; the forecast also applies the leakage-safe "
+                    "per-confederation calibration (reports/confed_calibration_2026.md) and a "
+                    "mean-preserving goals over-dispersion (reports/overdispersion_gate.md) — the "
+                    "latter gives livelier scorelines at the same E[goals] and W/D/L.",
         },
         "teams": teams_json, "fixtures": fixtures_json,
         "convergence_title": convergence_json, "scenario": scenario_json,

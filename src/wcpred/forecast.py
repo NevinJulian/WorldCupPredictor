@@ -2,7 +2,7 @@
 
 The simulator needs, for every matchup it draws, a *scoreline* — so it has to use a goals
 model (Dixon-Coles), not a bare 1X2 classifier. But Dixon-Coles is the weakest 1X2 view we
-have (normalized RPS 0.2147 vs the ensemble's 0.2036). So we keep DC's *scoreline shape* but
+have (normalized RPS 0.2128 vs the ensemble's 0.2044). So we keep DC's *scoreline shape* but
 **reweight each match's score matrix so its H/D/A marginals equal the calibrated ensemble
 (GBM + DC) outcome probabilities** — the sim inherits the outcome edge while still sampling
 real scorelines (needed for group-stage points/goal-difference and knockout draws).
