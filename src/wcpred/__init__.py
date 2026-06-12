@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 # Repo-root-relative paths so the package works regardless of CWD.
 PKG_DIR = Path(__file__).resolve().parent
