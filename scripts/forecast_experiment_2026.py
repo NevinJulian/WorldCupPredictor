@@ -116,6 +116,7 @@ def main(n_sims: int = N_SIMS) -> int:
                      "GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket",
             "model_version": wcpred.__version__, "rating_sigma": float(model.rating_sigma),
             "confed_calibration": True, "overdispersion": round(float(info["overdispersion"]), 3),
+            "xg_adjustment": info["xg_adjustment"],
             "confed_offsets": {k: round(v, 4) for k, v in info["confed_offsets"].items()},
             "ensemble_weight_gbm": round(info["ensemble_weight"], 3),
             "n_group_fixtures": info["n_group_fixtures"], "n_pairs": info["n_pairs"],

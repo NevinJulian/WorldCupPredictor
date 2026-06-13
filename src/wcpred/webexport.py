@@ -189,6 +189,7 @@ def build_payload(model, sim_groups, display, info, matches, *,
         **refresh.played_counts(matches),   # matches_played + wc2026_matches_played (matchday loop)
         "confed_calibration": True, "rating_sigma": float(model.rating_sigma),
         "overdispersion": round(float(info.get("overdispersion", 0.0)), 3),
+        "xg_adjustment": info.get("xg_adjustment", {"on": False}),
         "tournament_seed": seed, "tournament_levels": list(levels),
         "rounding": {"prob_dp": PROB_DP, "expected_goals_dp": EG_DP},
         "note": f"Reporting export of the shipped v{version} model (no refit). Game mode is "

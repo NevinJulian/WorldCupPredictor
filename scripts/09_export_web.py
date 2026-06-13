@@ -2,8 +2,8 @@
 
     python scripts/09_export_web.py [--sims-max 100000]
 
-Builds the shipped calibrated ForecastMatchModel (v0.2.0, confederation calibration on) once and
-serialises it via `wcpred.webexport` — game mode (neutral pairs), the 72 group fixtures, the
+Builds the shipped calibrated ForecastMatchModel (current `wcpred.__version__`, confederation
+calibration on) once and serialises it via `wcpred.webexport` — game mode (neutral pairs), the 72 group fixtures, the
 tournament odds at N in {1000,10000,50000,100000} + the chalk bracket, and metadata. No model
 changes; the group-stage fixtures match data/processed/forecast_2026.json exactly.
 """
