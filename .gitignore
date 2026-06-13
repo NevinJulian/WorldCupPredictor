@@ -3,6 +3,9 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# ...except the published forecast records (committed; the matchday refresh updates the live one).
+!data/processed/forecast_2026.json
+!data/processed/forecast_2026_pretournament.json
 
 # Python
 __pycache__/

@@ -1,6 +1,6 @@
 # WC 2026 — scoreline distributions & the chalk bracket
 
-*Reporting over the shipped ForecastMatchModel (v0.4.0, rating_sigma=0, per-confederation calibration on, goals over-dispersion 0.15). As-of 2026-06-07; generated 2026-06-12. Reporting only.*
+*Reporting over the shipped ForecastMatchModel (v0.4.0, rating_sigma=0, per-confederation calibration on, goals over-dispersion 0.15). As-of 2026-06-07; generated 2026-06-13. Reporting only.*
 
 ## 1. Group-fixture scoreline distributions
 

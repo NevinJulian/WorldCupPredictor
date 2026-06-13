@@ -1,0 +1,69 @@
+name: matchday-refresh
+
+# Re-runs the full forecast chain so the LIVE WC-2026 forecast tracks played results, commits the
+# updated records, and redeploys the Pages site. Auto-runs daily during the tournament months
+# (June/July) and is manually dispatchable. It deploys Pages inline (rather than relying on
+# pages.yml) because a push made with GITHUB_TOKEN does not trigger another workflow's `on: push`.
+on:
+  schedule:
+    - cron: "0 6 * 6,7 *"   # 06:00 UTC daily, June & July only (the tournament window)
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit the refreshed records back to main
+  pages: write      # deploy the static site
+  id-token: write
+
+# Serialise with the standalone Pages deploy (pages.yml shares this group).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Refresh the live forecast (download → rebuild → regenerate)
+        run: python scripts/10_refresh.py
+
+      - name: Commit refreshed records
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/processed/forecast_2026.json data/processed/forecast_2026_pretournament.json \
+                  reports/forecast_2026.md reports/forecast_2026_pretournament.md \
+                  reports/scoreline_distribution_2026.md web/data/model_export.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Matchday refresh: live WC-2026 forecast (automated)"
+            git push
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site artifact (web/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
