@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import numpy as np  # noqa: E402
 
 import wcpred  # noqa: E402
-from wcpred import DATA_PROCESSED, clean, forecast  # noqa: E402
+from wcpred import DATA_PROCESSED, clean, forecast, refresh  # noqa: E402
 
 N_SIMS = 50000
 SEED = 20260611             # the canonical probability seed (frozen)
@@ -109,6 +109,7 @@ def main(n_sims: int = N_SIMS) -> int:
     payload = {
         "metadata": {
             "as_of": as_of, "generated": datetime.date.today().isoformat(),
+            **refresh.played_counts(matches),   # matches_played + wc2026_matches_played (matchday loop)
             "n_sims": n_sims, "seed": SEED, "scenario_seed": SCENARIO_SEED,
             "convergence_seeds": list(CONVERGENCE_SEEDS),
             "model": "ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the "

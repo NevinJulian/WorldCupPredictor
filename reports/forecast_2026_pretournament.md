@@ -1,6 +1,8 @@
+> **Immutable pre-tournament record.** Snapshot of the v0.4.0 forecast taken before the first matchday refresh — preserved for later grading. Do not edit; the live forecast lives in `forecast_2026.md`.
+
 # WC 2026 forecast — frozen record
 
-*Model: ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket (v0.4.0, rating_sigma=0). As-of 2026-06-07; generated 2026-06-13.*
+*Model: ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket (v0.4.0, rating_sigma=0). As-of 2026-06-07; generated 2026-06-12.*
 
 **Monte Carlo:** N=50,000, seed=20260611 (one run — **not** averaged). Binomial SE = binomial sqrt(p(1-p)/N) (max ≈ 0.22 pp at p=0.5). Ensemble weight w_gbm=0.73.
 

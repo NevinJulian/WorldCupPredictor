@@ -24,7 +24,7 @@ import datetime
 
 import numpy as np
 
-from . import forecast, tournament
+from . import forecast, refresh, tournament
 from .confederations import confederation
 
 PROB_DP = 4
@@ -186,6 +186,7 @@ def build_payload(model, sim_groups, display, info, matches, *,
                  "GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket",
         "model_version": version, "as_of": as_of,
         "generated": generated or datetime.date.today().isoformat(),
+        **refresh.played_counts(matches),   # matches_played + wc2026_matches_played (matchday loop)
         "confed_calibration": True, "rating_sigma": float(model.rating_sigma),
         "overdispersion": round(float(info.get("overdispersion", 0.0)), 3),
         "tournament_seed": seed, "tournament_levels": list(levels),
