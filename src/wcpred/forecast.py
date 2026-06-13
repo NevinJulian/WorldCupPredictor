@@ -27,10 +27,13 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 
-from . import clean, datasets, elo, features
+from . import ROOT, clean, datasets, elo, features, xg_adjust
 from .confederations import confederation
 from .models import ConfederationCalibrator, EnsembleModel
 from .tournament import _knockout, _simulate_group, load_groups, r32_matchups
+
+# Live in-tournament xG stats (manual / FBref); absent or empty -> the adjustment is a no-op.
+WC2026_STATS_PATH = ROOT / "data" / "raw" / "wc2026_match_stats.csv"
 
 # Elo points -> natural log-odds (the standard Elo logistic), for the strength-shock tilt.
 _ELO_LOGIT = math.log(10.0) / 400.0
@@ -244,6 +247,10 @@ def build_forecast_model(
     rating_sigma: float = 0.0,
     confed_calibration: bool = True,
     overdispersion: float = DC_OVERDISPERSION,
+    xg_adjustment: bool = xg_adjust.XG_ADJUST_DEFAULT,
+    xg_lam: float = xg_adjust.XG_LAMBDA,
+    xg_shrink: float = xg_adjust.XG_SHRINK,
+    xg_stats_path=None,
 ):
     """Fit the ensemble on all played data and assemble the 2026 `ForecastMatchModel`.
 
@@ -255,6 +262,10 @@ def build_forecast_model(
     WITHOUT moving the mean; it is applied only to the score-matrix shape and the reweight restores
     the ensemble W/D/L, so outcome/title odds are unchanged — only the scoreline spread is livelier
     (gated on a goal-calibration backtest, reports/overdispersion_gate.md).
+    ``xg_adjustment`` (ON by default at lam/shrink defaults) rewrites the played WC-2026 scorelines
+    to their xG-adjusted effective values before the chain, so in-tournament ratings respond to
+    performance (xG), not finishing variance; it is a no-op until the live stats file
+    (WC2026_STATS_PATH) has played games (gated on the 2018+2022 backtest, reports/xg_adjust_gate.md).
 
     Returns ``(model, sim_groups, display_to_data, info)``:
       * ``model``            — the ForecastMatchModel for `simulate_tournament`.
@@ -268,6 +279,14 @@ def build_forecast_model(
             ranking = features.load_fifa_ranking()
     if groups is None:
         groups = load_groups()
+
+    # In-tournament xG adjustment: rewrite played WC-2026 scorelines to their xG-effective values
+    # BEFORE the as-of chain, so every downstream rating/feature reflects performance over variance.
+    # No-op until the live stats file has played games (or when toggled off).
+    n_xg = 0
+    if xg_adjustment:
+        matches, n_xg = xg_adjust.adjust_matches_for_forecast(
+            matches, xg_stats_path or WC2026_STATS_PATH, xg_lam, xg_shrink)
 
     with_elo, elo_model = elo.compute_elo(matches)
     ratings = elo_model.ratings
@@ -338,7 +357,9 @@ def build_forecast_model(
     info = {"ensemble_weight": float(ens.weight_), "n_pairs": len(pairs),
             "n_group_fixtures": n_group, "unresolved": unresolved,
             "confed_offsets": dict(calib.offsets_) if calib is not None else {},
-            "overdispersion": float(overdispersion), "neutral_matrices": neutral_matrices}
+            "overdispersion": float(overdispersion), "neutral_matrices": neutral_matrices,
+            "xg_adjustment": {"on": bool(xg_adjustment), "lam": float(xg_lam),
+                              "shrink": float(xg_shrink), "n_adjusted": int(n_xg)}}
     return model, sim_groups, display_to_data, info
 
 

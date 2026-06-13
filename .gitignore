@@ -6,6 +6,8 @@ data/processed/*
 # ...except the published forecast records (committed; the matchday refresh updates the live one).
 !data/processed/forecast_2026.json
 !data/processed/forecast_2026_pretournament.json
+# ...and the live in-tournament match-stats template the user fills each matchday (xG adjustment).
+!data/raw/wc2026_match_stats.csv
 
 # Python
 __pycache__/

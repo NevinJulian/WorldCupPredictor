@@ -17,6 +17,12 @@
     "rating_sigma": 0.0,
     "confed_calibration": true,
     "overdispersion": 0.15,
+    "xg_adjustment": {
+      "on": true,
+      "lam": 0.5,
+      "shrink": 0.75,
+      "n_adjusted": 0
+    },
     "confed_offsets": {
       "UEFA": 0.0428,
       "CONMEBOL": 0.0419,
