@@ -1,6 +1,6 @@
 # WC 2026 — scoreline distributions & the chalk bracket
 
-*Reporting over the shipped ForecastMatchModel (v0.4.0, rating_sigma=0, per-confederation calibration on, goals over-dispersion 0.15). As-of 2026-06-07; generated 2026-06-13. Reporting only.*
+*Reporting over the shipped ForecastMatchModel (v0.4.0, rating_sigma=0, per-confederation calibration on, goals over-dispersion 0.15). As-of 2026-06-13; generated 2026-06-14. Reporting only.*
 
 ## 1. Group-fixture scoreline distributions
 
@@ -10,184 +10,176 @@ Each fixture's scoreline probabilities are read **exactly** from its score matri
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Mexico | South Africa | 2.03 | 0.61 | **1-0** | 1-0 (17%), 2-0 (15%), 2-1 (9%) | 73/16/11 |
-| South Korea | Czechia | 1.35 | 1.04 | **0-0** | 0-0 (12%), 1-1 (12%), 1-0 (12%) | 42/28/29 |
-| Czechia | South Africa | 1.34 | 0.77 | **1-0** | 1-0 (18%), 0-0 (13%), 2-0 (11%) | 52/27/21 |
-| Mexico | South Korea | 1.74 | 0.92 | **1-0** | 1-0 (13%), 1-1 (12%), 0-0 (10%) | 55/27/18 |
-| Mexico | Czechia | 2.00 | 0.84 | **1-1** | 1-1 (12%), 1-0 (11%), 2-0 (10%) | 60/28/12 |
-| South Africa | South Korea | 0.68 | 1.37 | **0-1** | 0-1 (18%), 0-0 (15%), 0-2 (11%) | 17/30/53 |
+| Czechia | South Africa | 1.30 | 0.79 | **1-0** | 1-0 (17%), 0-0 (14%), 1-1 (11%) | 50/28/22 |
+| Mexico | South Korea | 1.67 | 0.98 | **1-0** | 1-0 (12%), 1-1 (12%), 0-0 (10%) | 52/27/21 |
+| Mexico | Czechia | 1.96 | 0.88 | **1-1** | 1-1 (12%), 1-0 (11%), 2-0 (10%) | 58/27/15 |
+| South Africa | South Korea | 0.68 | 1.37 | **0-1** | 0-1 (18%), 0-0 (15%), 0-2 (11%) | 18/29/53 |
 
 **Group B**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Canada | Bosnia and Herzegovina | 2.16 | 0.72 | **1-0** | 1-0 (14%), 2-0 (13%), 2-1 (9%) | 71/17/12 |
-| Qatar | Switzerland | 0.73 | 2.00 | **0-1** | 0-1 (15%), 0-2 (12%), 1-2 (10%) | 10/22/68 |
-| Switzerland | Bosnia and Herzegovina | 1.87 | 0.66 | **1-0** | 1-0 (17%), 2-0 (13%), 0-0 (10%) | 67/22/11 |
-| Canada | Qatar | 2.39 | 0.74 | **1-0** | 1-0 (13%), 2-0 (12%), 2-1 (10%) | 75/18/7 |
-| Canada | Switzerland | 1.31 | 1.31 | **1-1** | 1-1 (13%), 0-0 (11%), 0-1 (10%) | 33/31/36 |
-| Bosnia and Herzegovina | Qatar | 1.32 | 1.02 | **1-0** | 1-0 (14%), 0-0 (13%), 1-1 (12%) | 45/30/25 |
+| Switzerland | Bosnia and Herzegovina | 1.83 | 0.66 | **1-0** | 1-0 (17%), 2-0 (13%), 0-0 (11%) | 65/24/11 |
+| Canada | Qatar | 2.35 | 0.77 | **1-0** | 1-0 (13%), 2-0 (12%), 2-1 (10%) | 75/15/10 |
+| Canada | Switzerland | 1.34 | 1.29 | **1-1** | 1-1 (13%), 0-0 (11%), 0-1 (9%) | 35/30/35 |
+| Bosnia and Herzegovina | Qatar | 1.36 | 1.04 | **1-0** | 1-0 (15%), 0-0 (10%), 1-1 (10%) | 48/24/28 |
 
 **Group C**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Brazil | Morocco | 1.38 | 0.76 | **1-0** | 1-0 (17%), 0-0 (13%), 2-0 (11%) | 52/25/23 |
-| Haiti | Scotland | 1.07 | 1.53 | **0-1** | 0-1 (12%), 1-1 (11%), 0-0 (10%) | 25/27/49 |
-| Scotland | Morocco | 0.68 | 1.36 | **0-1** | 0-1 (17%), 0-0 (15%), 0-2 (11%) | 20/28/52 |
-| Brazil | Haiti | 2.79 | 0.62 | **2-0** | 2-0 (12%), 1-0 (11%), 3-0 (10%) | 80/16/4 |
-| Scotland | Brazil | 0.66 | 2.06 | **0-1** | 0-1 (13%), 0-2 (12%), 0-0 (10%) | 13/23/65 |
-| Morocco | Haiti | 1.92 | 0.61 | **1-0** | 1-0 (18%), 2-0 (14%), 2-1 (9%) | 70/20/10 |
+| Scotland | Morocco | 0.67 | 1.32 | **0-1** | 0-1 (17%), 0-0 (17%), 1-1 (11%) | 20/31/50 |
+| Brazil | Haiti | 2.79 | 0.61 | **2-0** | 2-0 (13%), 1-0 (11%), 3-0 (10%) | 81/14/5 |
+| Scotland | Brazil | 0.66 | 1.96 | **0-0** | 0-0 (12%), 0-1 (12%), 0-2 (12%) | 12/27/61 |
+| Morocco | Haiti | 1.97 | 0.56 | **1-0** | 1-0 (19%), 2-0 (15%), 2-1 (10%) | 73/20/7 |
 
 **Group D**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| United States | Paraguay | 1.33 | 1.11 | **0-1** | 0-1 (12%), 0-0 (10%), 1-1 (10%) | 39/25/36 |
-| Australia | Türkiye | 1.27 | 1.21 | **0-1** | 0-1 (12%), 1-1 (11%), 0-0 (11%) | 35/26/38 |
-| United States | Australia | 1.34 | 1.37 | **1-1** | 1-1 (11%), 0-1 (10%), 0-0 (9%) | 35/26/39 |
-| Türkiye | Paraguay | 1.15 | 1.10 | **1-0** | 1-0 (13%), 0-1 (13%), 0-0 (11%) | 40/24/37 |
-| United States | Türkiye | 1.71 | 1.33 | **0-1** | 0-1 (9%), 1-1 (9%), 1-2 (8%) | 45/20/36 |
-| Paraguay | Australia | 1.01 | 1.03 | **1-0** | 1-0 (16%), 0-0 (14%), 0-1 (12%) | 38/28/34 |
+| United States | Australia | 1.34 | 1.35 | **1-1** | 1-1 (12%), 0-1 (10%), 0-0 (10%) | 34/28/38 |
+| Türkiye | Paraguay | 1.21 | 1.02 | **1-0** | 1-0 (14%), 0-0 (13%), 1-1 (11%) | 41/28/31 |
+| United States | Türkiye | 1.70 | 1.28 | **1-1** | 1-1 (12%), 0-0 (8%), 0-1 (7%) | 42/27/31 |
+| Paraguay | Australia | 0.86 | 1.21 | **0-1** | 0-1 (15%), 0-0 (14%), 1-0 (12%) | 28/29/43 |
 
 **Group E**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Germany | Curaçao | 2.82 | 0.67 | **2-0** | 2-0 (12%), 1-0 (11%), 3-0 (10%) | 81/14/4 |
-| Ivory Coast | Ecuador | 0.72 | 1.27 | **0-1** | 0-1 (19%), 0-0 (15%), 1-1 (11%) | 19/30/51 |
-| Germany | Ivory Coast | 1.85 | 0.92 | **1-0** | 1-0 (15%), 2-0 (11%), 2-1 (10%) | 63/17/19 |
-| Ecuador | Curaçao | 2.04 | 0.50 | **1-0** | 1-0 (19%), 2-0 (15%), 0-0 (10%) | 75/20/4 |
-| Curaçao | Ivory Coast | 0.73 | 1.78 | **0-1** | 0-1 (14%), 0-2 (12%), 0-0 (11%) | 15/25/60 |
-| Ecuador | Germany | 1.23 | 1.18 | **1-0** | 1-0 (13%), 1-1 (11%), 0-0 (11%) | 40/27/33 |
+| Germany | Curaçao | 2.76 | 0.71 | **2-0** | 2-0 (12%), 1-0 (10%), 3-0 (9%) | 79/14/7 |
+| Ivory Coast | Ecuador | 0.70 | 1.29 | **0-1** | 0-1 (20%), 0-0 (16%), 1-1 (11%) | 18/30/53 |
+| Germany | Ivory Coast | 1.79 | 0.96 | **1-0** | 1-0 (14%), 2-0 (11%), 2-1 (10%) | 60/18/22 |
+| Ecuador | Curaçao | 2.03 | 0.52 | **1-0** | 1-0 (19%), 2-0 (15%), 2-1 (9%) | 75/19/6 |
+| Curaçao | Ivory Coast | 0.78 | 1.71 | **0-1** | 0-1 (13%), 0-0 (12%), 0-2 (11%) | 18/26/56 |
+| Ecuador | Germany | 1.26 | 1.14 | **1-0** | 1-0 (13%), 1-1 (11%), 0-0 (11%) | 42/27/31 |
 
 **Group F**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Netherlands | Japan | 1.51 | 1.09 | **1-0** | 1-0 (12%), 1-1 (12%), 0-0 (10%) | 48/28/24 |
-| Sweden | Tunisia | 1.20 | 1.03 | **1-0** | 1-0 (15%), 0-1 (12%), 0-0 (10%) | 44/22/34 |
-| Netherlands | Sweden | 1.84 | 0.90 | **1-0** | 1-0 (13%), 1-1 (10%), 2-0 (10%) | 59/24/17 |
-| Tunisia | Japan | 0.73 | 1.47 | **0-1** | 0-1 (16%), 0-0 (14%), 1-1 (12%) | 17/30/53 |
-| Japan | Sweden | 1.73 | 0.91 | **1-0** | 1-0 (13%), 1-1 (10%), 2-0 (10%) | 56/24/19 |
-| Tunisia | Netherlands | 0.67 | 1.70 | **0-1** | 0-1 (18%), 0-2 (13%), 0-0 (11%) | 12/25/63 |
+| Netherlands | Japan | 1.38 | 1.23 | **1-1** | 1-1 (12%), 1-0 (10%), 0-0 (10%) | 40/28/32 |
+| Sweden | Tunisia | 1.17 | 1.05 | **1-0** | 1-0 (15%), 0-1 (12%), 0-0 (11%) | 42/23/35 |
+| Netherlands | Sweden | 1.85 | 0.93 | **1-0** | 1-0 (13%), 2-0 (10%), 2-1 (9%) | 60/21/19 |
+| Tunisia | Japan | 0.74 | 1.46 | **0-1** | 0-1 (16%), 0-0 (15%), 1-1 (12%) | 17/31/52 |
+| Japan | Sweden | 1.72 | 0.93 | **1-0** | 1-0 (13%), 1-1 (10%), 2-0 (10%) | 56/24/21 |
+| Tunisia | Netherlands | 0.62 | 1.75 | **0-1** | 0-1 (18%), 0-2 (13%), 0-0 (12%) | 8/26/65 |
 
 **Group G**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Belgium | Egypt | 1.46 | 0.90 | **1-0** | 1-0 (15%), 2-0 (10%), 0-0 (10%) | 52/23/26 |
-| Iran | New Zealand | 1.65 | 0.72 | **1-0** | 1-0 (16%), 0-0 (13%), 1-1 (12%) | 58/29/13 |
-| Belgium | Iran | 1.49 | 1.02 | **1-0** | 1-0 (15%), 2-0 (10%), 2-1 (9%) | 52/21/27 |
-| New Zealand | Egypt | 0.74 | 1.37 | **0-1** | 0-1 (17%), 0-0 (16%), 1-1 (13%) | 16/33/51 |
-| Egypt | Iran | 0.89 | 1.18 | **0-1** | 0-1 (15%), 0-0 (13%), 1-0 (13%) | 30/26/44 |
-| New Zealand | Belgium | 0.74 | 2.01 | **0-1** | 0-1 (14%), 0-2 (12%), 1-1 (11%) | 8/26/66 |
+| Belgium | Egypt | 1.50 | 0.90 | **1-0** | 1-0 (16%), 2-0 (11%), 0-1 (10%) | 54/19/27 |
+| Iran | New Zealand | 1.67 | 0.71 | **1-0** | 1-0 (16%), 0-0 (13%), 1-1 (12%) | 59/29/12 |
+| Belgium | Iran | 1.46 | 1.06 | **1-0** | 1-0 (14%), 2-0 (9%), 2-1 (9%) | 50/20/29 |
+| New Zealand | Egypt | 0.73 | 1.38 | **0-1** | 0-1 (17%), 0-0 (16%), 1-1 (13%) | 16/33/52 |
+| Egypt | Iran | 0.86 | 1.17 | **0-0** | 0-0 (15%), 0-1 (15%), 1-0 (12%) | 28/29/43 |
+| New Zealand | Belgium | 0.76 | 1.92 | **0-1** | 0-1 (13%), 1-1 (13%), 0-0 (12%) | 8/30/61 |
 
 **Group H**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Spain | Cape Verde | 2.41 | 0.46 | **1-0** | 1-0 (16%), 2-0 (16%), 3-0 (11%) | 81/15/3 |
-| Saudi Arabia | Uruguay | 0.51 | 1.61 | **0-1** | 0-1 (20%), 0-0 (15%), 0-2 (14%) | 8/28/64 |
-| Spain | Saudi Arabia | 2.26 | 0.49 | **1-0** | 1-0 (18%), 2-0 (16%), 3-0 (10%) | 80/16/4 |
-| Uruguay | Cape Verde | 1.81 | 0.50 | **1-0** | 1-0 (21%), 2-0 (16%), 0-0 (10%) | 72/19/9 |
-| Cape Verde | Saudi Arabia | 0.91 | 1.07 | **0-0** | 0-0 (15%), 0-1 (14%), 1-0 (13%) | 32/29/39 |
-| Uruguay | Spain | 0.85 | 1.41 | **0-1** | 0-1 (15%), 0-0 (13%), 1-1 (11%) | 22/28/49 |
+| Spain | Cape Verde | 2.41 | 0.47 | **1-0** | 1-0 (16%), 2-0 (16%), 3-0 (11%) | 81/15/4 |
+| Saudi Arabia | Uruguay | 0.48 | 1.65 | **0-1** | 0-1 (22%), 0-2 (15%), 0-0 (14%) | 6/27/67 |
+| Spain | Saudi Arabia | 2.27 | 0.49 | **1-0** | 1-0 (18%), 2-0 (16%), 3-0 (10%) | 81/15/4 |
+| Uruguay | Cape Verde | 1.82 | 0.49 | **1-0** | 1-0 (21%), 2-0 (16%), 0-0 (10%) | 72/19/9 |
+| Cape Verde | Saudi Arabia | 0.85 | 1.12 | **0-1** | 0-1 (16%), 0-0 (16%), 1-0 (12%) | 29/29/42 |
+| Uruguay | Spain | 0.87 | 1.42 | **0-1** | 0-1 (15%), 0-0 (12%), 1-1 (11%) | 24/26/49 |
 
 **Group I**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| France | Senegal | 1.53 | 0.74 | **1-0** | 1-0 (18%), 0-0 (12%), 2-0 (12%) | 58/25/17 |
-| Iraq | Norway | 0.72 | 1.46 | **0-1** | 0-1 (18%), 0-0 (13%), 0-2 (11%) | 16/28/56 |
-| France | Iraq | 1.89 | 0.49 | **1-0** | 1-0 (21%), 2-0 (16%), 0-0 (10%) | 74/20/6 |
-| Norway | Senegal | 1.23 | 1.05 | **1-0** | 1-0 (15%), 0-0 (12%), 1-1 (11%) | 44/26/30 |
-| Norway | France | 0.83 | 1.62 | **0-1** | 0-1 (13%), 1-1 (13%), 0-0 (13%) | 17/30/53 |
-| Senegal | Iraq | 1.35 | 0.67 | **1-0** | 1-0 (19%), 0-0 (15%), 2-0 (12%) | 54/27/19 |
+| France | Senegal | 1.53 | 0.76 | **1-0** | 1-0 (18%), 2-0 (12%), 0-0 (11%) | 59/23/19 |
+| Iraq | Norway | 0.71 | 1.44 | **0-1** | 0-1 (17%), 0-0 (15%), 1-1 (12%) | 15/31/54 |
+| France | Iraq | 1.87 | 0.52 | **1-0** | 1-0 (20%), 2-0 (15%), 0-0 (10%) | 72/19/8 |
+| Norway | Senegal | 1.19 | 1.09 | **1-0** | 1-0 (15%), 0-0 (11%), 0-1 (11%) | 42/24/34 |
+| Norway | France | 0.85 | 1.65 | **0-1** | 0-1 (14%), 1-1 (11%), 0-0 (11%) | 19/26/55 |
+| Senegal | Iraq | 1.36 | 0.63 | **1-0** | 1-0 (19%), 0-0 (16%), 2-0 (12%) | 54/29/16 |
 
 **Group J**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Argentina | Algeria | 1.94 | 0.66 | **1-0** | 1-0 (16%), 2-0 (13%), 0-0 (10%) | 68/22/10 |
-| Austria | Jordan | 1.47 | 0.96 | **1-0** | 1-0 (14%), 0-0 (10%), 1-1 (10%) | 50/24/26 |
-| Argentina | Austria | 1.97 | 0.63 | **1-0** | 1-0 (17%), 2-0 (14%), 2-1 (9%) | 70/17/13 |
-| Jordan | Algeria | 0.95 | 1.56 | **1-1** | 1-1 (12%), 0-0 (12%), 0-1 (11%) | 22/30/48 |
-| Algeria | Austria | 1.20 | 1.24 | **1-1** | 1-1 (12%), 0-0 (12%), 0-1 (12%) | 33/29/38 |
-| Jordan | Argentina | 0.52 | 2.13 | **0-1** | 0-1 (14%), 0-2 (13%), 0-0 (12%) | 4/27/69 |
+| Argentina | Algeria | 1.94 | 0.69 | **1-0** | 1-0 (17%), 2-0 (13%), 2-1 (10%) | 69/19/12 |
+| Austria | Jordan | 1.51 | 0.94 | **1-0** | 1-0 (15%), 2-0 (10%), 0-0 (10%) | 53/22/25 |
+| Argentina | Austria | 1.91 | 0.64 | **1-0** | 1-0 (16%), 2-0 (13%), 0-0 (10%) | 67/21/12 |
+| Jordan | Algeria | 0.88 | 1.37 | **1-1** | 1-1 (21%), 0-0 (20%), 0-1 (8%) | 14/51/35 |
+| Algeria | Austria | 1.17 | 1.27 | **1-1** | 1-1 (12%), 0-1 (12%), 0-0 (12%) | 31/29/40 |
+| Jordan | Argentina | 0.52 | 2.15 | **0-1** | 0-1 (14%), 0-2 (14%), 0-0 (12%) | 4/26/70 |
 
 **Group K**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| Portugal | DR Congo | 1.76 | 0.60 | **1-0** | 1-0 (17%), 2-0 (13%), 0-0 (12%) | 64/24/12 |
-| Uzbekistan | Colombia | 0.63 | 1.51 | **0-1** | 0-1 (17%), 0-0 (15%), 0-2 (12%) | 14/30/57 |
-| Portugal | Uzbekistan | 1.68 | 0.68 | **1-0** | 1-0 (17%), 2-0 (12%), 0-0 (12%) | 61/25/14 |
-| Colombia | DR Congo | 1.71 | 0.52 | **1-0** | 1-0 (20%), 2-0 (14%), 0-0 (13%) | 66/24/9 |
-| Colombia | Portugal | 1.22 | 1.07 | **1-0** | 1-0 (13%), 0-0 (12%), 1-1 (11%) | 41/27/32 |
-| DR Congo | Uzbekistan | 0.85 | 1.05 | **0-0** | 0-0 (17%), 0-1 (15%), 1-0 (13%) | 30/30/39 |
+| Portugal | DR Congo | 1.88 | 0.56 | **1-0** | 1-0 (18%), 2-0 (14%), 0-0 (10%) | 70/21/9 |
+| Uzbekistan | Colombia | 0.62 | 1.55 | **0-1** | 0-1 (18%), 0-0 (15%), 0-2 (12%) | 12/29/58 |
+| Portugal | Uzbekistan | 1.71 | 0.67 | **1-0** | 1-0 (17%), 2-0 (13%), 0-0 (11%) | 62/24/13 |
+| Colombia | DR Congo | 1.70 | 0.51 | **1-0** | 1-0 (19%), 2-0 (14%), 0-0 (14%) | 65/26/8 |
+| Colombia | Portugal | 1.22 | 1.07 | **1-0** | 1-0 (13%), 0-0 (12%), 1-1 (11%) | 41/28/32 |
+| DR Congo | Uzbekistan | 0.87 | 1.07 | **0-1** | 0-1 (16%), 0-0 (15%), 1-0 (14%) | 32/28/41 |
 
 **Group L**
 
 | Home | Away | E[H] | E[A] | Modal | Top-3 scorelines (prob) | P(H/D/A) |
 |--|--|--:|--:|:--:|--|:--:|
-| England | Croatia | 1.37 | 0.85 | **1-0** | 1-0 (15%), 0-0 (13%), 1-1 (11%) | 49/27/24 |
-| Ghana | Panama | 0.89 | 1.38 | **0-1** | 0-1 (16%), 0-0 (12%), 1-1 (11%) | 22/27/51 |
-| England | Ghana | 1.92 | 0.47 | **1-0** | 1-0 (20%), 2-0 (15%), 0-0 (12%) | 73/23/4 |
-| Panama | Croatia | 0.81 | 1.64 | **0-1** | 0-1 (14%), 0-0 (12%), 1-1 (11%) | 17/28/56 |
-| Panama | England | 0.64 | 1.78 | **0-1** | 0-1 (15%), 0-0 (13%), 0-2 (12%) | 12/28/61 |
-| Croatia | Ghana | 1.76 | 0.64 | **1-0** | 1-0 (20%), 2-0 (14%), 2-1 (10%) | 68/20/12 |
+| England | Croatia | 1.36 | 0.84 | **1-0** | 1-0 (15%), 0-0 (14%), 1-1 (12%) | 48/29/23 |
+| Ghana | Panama | 0.91 | 1.34 | **0-1** | 0-1 (16%), 0-0 (13%), 1-1 (12%) | 23/28/48 |
+| England | Ghana | 1.93 | 0.48 | **1-0** | 1-0 (20%), 2-0 (16%), 0-0 (11%) | 73/22/5 |
+| Panama | Croatia | 0.82 | 1.61 | **0-1** | 0-1 (14%), 0-0 (12%), 1-1 (12%) | 17/28/54 |
+| Panama | England | 0.65 | 1.80 | **0-1** | 0-1 (15%), 0-0 (12%), 0-2 (12%) | 12/27/61 |
+| Croatia | Ghana | 1.78 | 0.63 | **1-0** | 1-0 (20%), 2-0 (14%), 2-1 (10%) | 69/21/11 |
 
 ## 2. Chalk bracket vs one sampled scenario
 
-**Chalk champion: Spain**  ·  **Sampled-scenario champion: Spain** (seed 7)
+**Chalk champion: Spain**  ·  **Sampled-scenario champion: Switzerland** (seed 7)
 
 ### 2a. Chalk bracket — the most-likely path, **NOT a probability**
 
 > Deterministic: group order by expected points, then the higher head-to-head win probability advances each tie, shown with that tie's **modal** scoreline. A single favourites-hold path — it does not represent how likely this exact run is.
 
-8 best third-placed (groups): A, C, D, E, G, I, J, L
+8 best third-placed (groups): D, E, F, G, I, J, K, L
 
 **R32**  
-- Germany 1-0 Scotland → **Germany** (58% / 20% to win)
-- France 1-0 Paraguay → **France** (59% / 16% to win)
-- South Korea 0-1 Switzerland → **Switzerland** (20% / 51% to win)
-- Netherlands 1-0 Morocco → **Netherlands** (47% / 29% to win)
-- Brazil 1-0 Japan → **Brazil** (55% / 20% to win)
-- Ecuador 1-0 Norway → **Ecuador** (43% / 28% to win)
-- Mexico 1-0 Ivory Coast → **Mexico** (49% / 24% to win)
-- England 1-0 Senegal → **England** (53% / 19% to win)
-- Portugal 1-0 Croatia → **Portugal** (49% / 26% to win)
-- Spain 1-0 Austria → **Spain** (66% / 11% to win)
-- United States 1-1 Algeria → **Algeria** (33% / 41% to win)
-- Belgium 1-0 Czechia → **Belgium** (60% / 17% to win)
-- Argentina 1-0 Uruguay → **Argentina** (53% / 16% to win)
-- Türkiye 1-0 Iran → **Iran** (38% / 39% to win)
-- Canada 1-0 Egypt → **Canada** (41% / 31% to win)
-- Colombia 1-0 Panama → **Colombia** (62% / 13% to win)
+- Ecuador 1-0 Türkiye → **Ecuador** (50% / 22% to win)
+- France 1-0 Sweden → **France** (71% / 11% to win)
+- South Korea 0-1 Switzerland → **Switzerland** (26% / 45% to win)
+- Netherlands 0-0 Morocco → **Netherlands** (37% / 33% to win)
+- Brazil 1-0 Japan → **Brazil** (50% / 22% to win)
+- Germany 1-1 Norway → **Germany** (43% / 35% to win)
+- Mexico 1-0 Ivory Coast → **Mexico** (53% / 20% to win)
+- England 1-0 Uzbekistan → **England** (60% / 9% to win)
+- Portugal 1-0 Croatia → **Portugal** (52% / 28% to win)
+- Spain 1-0 Austria → **Spain** (66% / 13% to win)
+- Australia 1-0 Senegal → **Australia** (40% / 31% to win)
+- Belgium 1-0 Algeria → **Belgium** (52% / 28% to win)
+- Argentina 1-0 Uruguay → **Argentina** (55% / 21% to win)
+- United States 0-1 Iran → **Iran** (31% / 42% to win)
+- Canada 1-0 Egypt → **Canada** (39% / 32% to win)
+- Colombia 1-0 Panama → **Colombia** (63% / 13% to win)
 
 **R16**  
-- Germany 1-1 France → **France** (31% / 42% to win)
-- Switzerland 1-1 Netherlands → **Netherlands** (22% / 45% to win)
-- Brazil 1-0 Ecuador → **Brazil** (49% / 25% to win)
-- Mexico 0-1 England → **England** (22% / 48% to win)
-- Portugal 0-1 Spain → **Spain** (20% / 52% to win)
-- Algeria 1-1 Belgium → **Belgium** (22% / 50% to win)
-- Argentina 1-0 Iran → **Argentina** (65% / 10% to win)
-- Canada 0-1 Colombia → **Colombia** (16% / 56% to win)
+- Ecuador 0-1 France → **France** (27% / 44% to win)
+- Switzerland 1-1 Netherlands → **Netherlands** (27% / 45% to win)
+- Brazil 1-0 Germany → **Brazil** (50% / 29% to win)
+- Mexico 0-1 England → **England** (22% / 47% to win)
+- Portugal 0-1 Spain → **Spain** (22% / 52% to win)
+- Australia 1-1 Belgium → **Belgium** (26% / 43% to win)
+- Argentina 1-0 Iran → **Argentina** (68% / 9% to win)
+- Canada 0-1 Colombia → **Colombia** (14% / 57% to win)
 
 **QF**  
-- France 1-0 Netherlands → **France** (44% / 29% to win)
-- Brazil 0-1 England → **England** (29% / 42% to win)
-- Spain 1-0 Belgium → **Spain** (56% / 18% to win)
-- Argentina 1-0 Colombia → **Argentina** (48% / 22% to win)
+- France 1-0 Netherlands → **France** (48% / 27% to win)
+- Brazil 0-0 England → **England** (33% / 34% to win)
+- Spain 1-0 Belgium → **Spain** (56% / 19% to win)
+- Argentina 1-0 Colombia → **Argentina** (51% / 24% to win)
 
 **SF**  
-- France 1-0 England → **France** (42% / 31% to win)
-- Spain 1-0 Argentina → **Spain** (40% / 34% to win)
+- France 1-0 England → **France** (38% / 36% to win)
+- Spain 1-0 Argentina → **Spain** (37% / 37% to win)
 
 **Final**  
-- France 0-1 Spain → **Spain** (22% / 50% to win)
+- France 0-1 Spain → **Spain** (25% / 50% to win)
 
 **Chalk champion: Spain** 🏆
 
@@ -195,47 +187,47 @@ Each fixture's scoreline probabilities are read **exactly** from its score matri
 
 > The same draw shown in `reports/forecast_2026.md` (seed 7). It samples actual scorelines (and shootouts on draws), so it diverges from the chalk path wherever an underdog wins.
 
-8 best third-placed (groups): G, E, H, I, A, K, C, J
+8 best third-placed (groups): C, G, E, H, I, A, D, K
 
 **R32**  
-- Germany 5-0 Haiti → **Germany**
-- France 2-0 Saudi Arabia → **France**
-- South Korea 1-1 Canada → **South Korea** *(pens)*
-- Netherlands 2-1 Brazil → **Netherlands**
-- Morocco 0-0 Sweden → **Morocco** *(pens)*
+- Germany 3-0 Morocco → **Germany**
+- France 1-4 Türkiye → **Türkiye**
+- South Korea 2-0 Qatar → **South Korea**
+- Netherlands 1-0 Scotland → **Netherlands**
+- Brazil 3-1 Sweden → **Brazil**
 - Ecuador 0-0 Iraq → **Ecuador** *(pens)*
-- Mexico 6-0 Curaçao → **Mexico**
-- England 2-1 DR Congo → **England**
-- Uzbekistan 1-0 Panama → **Uzbekistan**
-- Uruguay 1-1 Algeria → **Algeria** *(pens)*
-- Paraguay 0-3 Austria → **Austria**
-- Egypt 1-2 Czechia → **Czechia**
-- Argentina 1-3 Spain → **Spain**
-- Türkiye 0-4 Belgium → **Belgium**
-- Switzerland 1-1 Iran → **Iran** *(pens)*
-- Portugal 3-2 Senegal → **Portugal**
+- Mexico 0-0 Cape Verde → **Mexico** *(pens)*
+- England 5-0 DR Congo → **England**
+- Uzbekistan 1-2 Panama → **Panama**
+- Uruguay 1-1 Algeria → **Uruguay** *(pens)*
+- Paraguay 3-1 Curaçao → **Paraguay**
+- Egypt 1-0 Czechia → **Egypt**
+- Argentina 1-2 Spain → **Spain**
+- Australia 1-3 Belgium → **Belgium**
+- Switzerland 1-0 Iran → **Switzerland**
+- Portugal 1-2 Senegal → **Senegal**
 
 **R16**  
-- Germany 0-1 France → **France**
-- South Korea 3-0 Netherlands → **South Korea**
-- Morocco 0-0 Ecuador → **Ecuador** *(pens)*
-- Mexico 2-0 England → **Mexico**
-- Uzbekistan 0-0 Algeria → **Algeria** *(pens)*
-- Austria 2-3 Czechia → **Czechia**
-- Spain 0-0 Belgium → **Spain** *(pens)*
-- Iran 2-0 Portugal → **Iran**
+- Germany 3-1 Türkiye → **Germany**
+- South Korea 2-3 Netherlands → **Netherlands**
+- Brazil 0-1 Ecuador → **Ecuador**
+- Mexico 2-4 England → **England**
+- Panama 0-0 Uruguay → **Uruguay** *(pens)*
+- Paraguay 2-0 Egypt → **Paraguay**
+- Spain 0-1 Belgium → **Belgium**
+- Switzerland 1-0 Senegal → **Switzerland**
 
 **QF**  
-- France 1-3 South Korea → **South Korea**
-- Ecuador 2-0 Mexico → **Ecuador**
-- Algeria 0-2 Czechia → **Czechia**
-- Spain 1-0 Iran → **Spain**
+- Germany 3-0 Netherlands → **Germany**
+- Ecuador 0-0 England → **England** *(pens)*
+- Uruguay 2-1 Paraguay → **Uruguay**
+- Belgium 1-2 Switzerland → **Switzerland**
 
 **SF**  
-- South Korea 0-2 Ecuador → **Ecuador**
-- Czechia 0-1 Spain → **Spain**
+- Germany 2-0 England → **Germany**
+- Uruguay 0-1 Switzerland → **Switzerland**
 
 **Final**  
-- Ecuador 0-2 Spain → **Spain**
+- Germany 0-2 Switzerland → **Switzerland**
 
-**Sampled-scenario champion: Spain** 🏆
+**Sampled-scenario champion: Switzerland** 🏆
