@@ -88,10 +88,23 @@ def test_every_team_pair_is_resolvable_either_orientation(data):
 
 def test_group_stage_72_fixtures_with_fields(data):
     gs = data["group_stage"]
-    assert len(gs) == 72
+    assert len(gs) == 72                                        # always all 72, played or not
     for r in gs:
         assert "group" in r and "home" in r and "away" in r
-        _check_dist(r)
+        assert isinstance(r["played"], bool)
+        if r["played"]:
+            # played fixtures carry the real result ...
+            assert isinstance(r["home_score"], int) and isinstance(r["away_score"], int)
+            assert r["home_score"] >= 0 and r["away_score"] >= 0
+            assert r["result"] in ("H", "D", "A")
+            # ... and keep the pre-match prediction for grading (reduced fields from the immutable
+            # snapshot; None only if the snapshot predates the fixture).
+            pred = r["prediction"]
+            if pred is not None:
+                assert "-" in pred["modal"]
+                assert math.isclose(pred["p_home"] + pred["p_draw"] + pred["p_away"], 1.0, abs_tol=2e-3)
+        else:
+            _check_dist(r)
 
 
 def test_tournament_levels_and_reach_fields(data):

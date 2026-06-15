@@ -48,7 +48,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/processed/forecast_2026.json data/processed/forecast_2026_pretournament.json \
                   reports/forecast_2026.md reports/forecast_2026_pretournament.md \
-                  reports/scoreline_distribution_2026.md web/data/model_export.json
+                  reports/scoreline_distribution_2026.md reports/live_grading.md \
+                  web/data/model_export.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else

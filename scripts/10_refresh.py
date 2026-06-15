@@ -11,8 +11,9 @@ matches inform later-match predictions (the 5y Dixon-Coles half-life keeps DC st
 over-reacting to a handful of games: a heavy, correct prior).
 
 Chain: snapshot the pre-tournament forecast (once, immutable) -> download -> rebuild features ->
-regenerate forecast_2026.{json,md} -> scoreline_distribution_2026.md -> model_export.json -> verify
-invariants (title -> 1.0, advance -> 32.0) and print tournament progress.
+regenerate forecast_2026.{json,md} -> scoreline_distribution_2026.md -> model_export.json -> live
+grading (reports/live_grading.md) -> verify invariants (title -> 1.0, advance -> 32.0) and print
+tournament progress.
 """
 from __future__ import annotations
 
@@ -63,6 +64,10 @@ def main() -> int:
     _run("forecast_experiment_2026.py", [] if args.sims is None else ["--sims", str(args.sims)])
     _run("scoreline_distribution_2026.py")
     _run("09_export_web.py")
+
+    # 5b. Live grading: score the pre-match prediction of every now-played WC match (frozen vs
+    # result-only vs xG-adjusted) -> reports/live_grading.md. As-of; no-op until games are played.
+    _run("grade_live_2026.py")
 
     # 6. Re-verify invariants and report tournament progress.
     fc = json.loads(refresh.LIVE_JSON.read_text(encoding="utf-8"))
