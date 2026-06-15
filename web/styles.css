@@ -616,6 +616,21 @@ body.modal-open { overflow: hidden; }
 .gfix__xg {
   font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+/* Played group fixtures: a real result, set off from the muted predicted rows. */
+.gfix__row--played { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.gfix__row--played:hover, .gfix__row--played:focus-visible {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+.gfix__row--played .gfix__score { color: var(--accent); font-size: .92rem; }
+.gfix__ft {
+  font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+  color: var(--accent); white-space: nowrap;
+}
+/* Detail-modal caption above the pre-match prediction of a played fixture. */
+.panel-caption {
+  margin: 14px 0 6px; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  font-weight: 700; color: var(--muted);
+}
 
 /* bracket ties: a labelled xG line under the two team rows */
 .bx-xg {

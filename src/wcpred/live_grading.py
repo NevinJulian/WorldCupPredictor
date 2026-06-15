@@ -66,12 +66,28 @@ def frozen_group_predictions(pretournament_path: "str | Path") -> dict[tuple[str
     Covers the 72 group fixtures only (display-name keyed, matching the forecast output). Returns
     an empty dict if the snapshot is missing.
     """
+    return {pair: (p["p_home"], p["p_draw"], p["p_away"])
+            for pair, p in frozen_group_fixtures(pretournament_path).items()}
+
+
+def frozen_group_fixtures(pretournament_path: "str | Path") -> dict[tuple[str, str], dict]:
+    """{(home_display, away_display) -> {modal, e_home, e_away, p_home, p_draw, p_away}} from the
+    frozen pre-tournament JSON — the immutable pre-match prediction per group fixture.
+
+    Reduced fields only: the snapshot stores the forecast record's scoreline summary (no top-N or
+    goal-totals distribution). Display-name keyed, matching the forecast output; empty dict if the
+    snapshot is missing. The export attaches this to a *played* group fixture so the live site can
+    show what was predicted before kickoff alongside the real result.
+    """
     path = Path(pretournament_path)
     if not path.exists():
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
-    return {(fx["home"], fx["away"]): (fx["p_home"], fx["p_draw"], fx["p_away"])
-            for fx in data.get("fixtures", [])}
+    return {(fx["home"], fx["away"]): {
+        "modal": fx.get("most_likely"),
+        "e_home": fx.get("e_home"), "e_away": fx.get("e_away"),
+        "p_home": fx.get("p_home"), "p_draw": fx.get("p_draw"), "p_away": fx.get("p_away"),
+    } for fx in data.get("fixtures", [])}
 
 
 def prediction_hda(model, home: str, away: str) -> "tuple[float, float, float] | None":

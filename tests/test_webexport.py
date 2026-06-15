@@ -16,6 +16,7 @@ import sys
 from itertools import combinations
 
 import numpy as np
+import pandas as pd
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -91,6 +92,47 @@ def test_game_mode_is_neutral_not_host_aware():
 
 
 # --------------------------------------------------------------------------- #
+# Group stage — always 72, played + unplayed
+# --------------------------------------------------------------------------- #
+def test_group_stage_records_played_and_unplayed():
+    """Every fixture is emitted: unplayed → the live distribution; played → the actual result plus
+    the frozen pre-match prediction (None if the snapshot has no record for it)."""
+    base = np.ones((6, 6)) / 36.0
+    mats = {("A", "B"): forecast.reweight_to_outcome(base, (0.50, 0.25, 0.25)),
+            ("C", "D"): forecast.reweight_to_outcome(base, (0.40, 0.30, 0.30))}
+    model = forecast.ForecastMatchModel(mats, {})
+    fixtures = pd.DataFrame([
+        {"home_team": "A", "away_team": "B", "played": False,
+         "home_score": np.nan, "away_score": np.nan, "result": None},
+        {"home_team": "C", "away_team": "D", "played": True,
+         "home_score": 2, "away_score": 1, "result": "H"},
+    ])
+    team_group = {"A": "A", "B": "A", "C": "B", "D": "B"}
+    frozen = {("C", "D"): {"modal": "1-0", "e_home": 1.7, "e_away": 0.8,
+                           "p_home": 0.55, "p_draw": 0.25, "p_away": 0.20}}
+    by = {(r["home"], r["away"]): r for r in
+          webexport.group_stage_records(model, fixtures, team_group, _ident, frozen)}
+    assert len(by) == 2
+
+    up = by[("A", "B")]                                        # unplayed → full live distribution
+    assert up["played"] is False
+    for f in ("modal", "top", "e_home", "p_home", "p_over25", "goal_totals"):
+        assert f in up
+    assert "home_score" not in up and "prediction" not in up
+
+    pl = by[("C", "D")]                                        # played → actual result + prediction
+    assert pl["played"] is True
+    assert pl["home_score"] == 2 and pl["away_score"] == 1 and pl["result"] == "H"
+    assert pl["prediction"]["modal"] == "1-0"
+    assert pl["prediction"]["p_home"] == 0.55
+
+    # a played fixture absent from the snapshot → prediction is None (graceful), still emitted
+    by2 = {(r["home"], r["away"]): r for r in
+           webexport.group_stage_records(model, fixtures, team_group, _ident, {})}
+    assert by2[("C", "D")]["prediction"] is None and by2[("C", "D")]["played"] is True
+
+
+# --------------------------------------------------------------------------- #
 # Tournament
 # --------------------------------------------------------------------------- #
 def test_tournament_records_accounting_and_placement():
@@ -160,12 +202,23 @@ _FROZEN = ROOT / "data" / "processed" / "forecast_2026.json"
 
 @pytest.mark.skipif(not _EXPORT.exists(), reason="web/data/model_export.json not generated yet")
 def test_group_fixtures_match_frozen_forecast():
+    """The export's *unplayed* group fixtures match forecast_2026.json field-for-field.
+
+    The export always carries all 72 group fixtures; forecast_2026.json carries only the unplayed
+    predictions (its count legitimately shrinks once games are played, since both are regenerated
+    from the same data each refresh). So we cross-check prediction fields only on the fixtures
+    present in both files — never hard-coding 72 on the frozen side.
+    """
     export = json.loads(_EXPORT.read_text(encoding="utf-8"))
     frozen = json.loads(_FROZEN.read_text(encoding="utf-8"))
     exp = {(r["home"], r["away"]): r for r in export["group_stage"]}
-    assert len(frozen["fixtures"]) == len(exp) == 72
+    assert len(exp) == 72                                       # export always lists all 72
+    checked = 0
     for fx in frozen["fixtures"]:
-        r = exp[(fx["home"], fx["away"])]
+        r = exp.get((fx["home"], fx["away"]))
+        if r is None or r["played"]:                            # frozen holds unplayed predictions
+            continue
+        checked += 1
         assert r["group"] == fx["group"]
         assert r["modal"] == fx["most_likely"]                  # modal == most-likely scoreline
         assert r["e_home"] == pytest.approx(fx["e_home"], abs=1e-3)
@@ -173,6 +226,7 @@ def test_group_fixtures_match_frozen_forecast():
         assert r["p_home"] == pytest.approx(fx["p_home"], abs=1e-4)
         assert r["p_draw"] == pytest.approx(fx["p_draw"], abs=1e-4)
         assert r["p_away"] == pytest.approx(fx["p_away"], abs=1e-4)
+    assert checked == len(frozen["fixtures"])                   # every frozen fixture cross-checked
 
 
 @pytest.mark.skipif(not _EXPORT.exists(), reason="web/data/model_export.json not generated yet")

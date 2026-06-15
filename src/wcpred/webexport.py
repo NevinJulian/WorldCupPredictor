@@ -8,8 +8,11 @@ The payload (see `build_payload`) has four sections:
   * ``game_mode``    — every unordered pair of the 48 teams at a NEUTRAL venue: modal scoreline,
                        top-6 scorelines + probabilities, P(win/draw/win), expected goals, P(over
                        2.5 goals) and the total-goals distribution P(0,1,2,3,4,5+).
-  * ``group_stage``  — the 72 real group fixtures (host advantage where the real fixture has it),
-                       same fields. E[goals]/P(H/D/A)/modal still match `forecast_2026.json` exactly.
+  * ``group_stage``  — all 72 real group fixtures (always 72, played or not), each with a ``played``
+                       flag. Unplayed fixtures carry the live as-of distribution (host advantage where
+                       the real fixture has it; E[goals]/P(H/D/A)/modal still match `forecast_2026.json`
+                       for the unplayed ones). Played fixtures carry the actual result plus the frozen
+                       pre-tournament prediction (`prediction`) for grading/display.
   * ``tournament``   — per-team advance/R16/QF/SF/Final/title and per-group win/runner-up/3rd/
                        advance at N in {1000,10000,50000,100000} (the simulate_tournament-equivalent
                        `forecast.run_probabilities`, same seed), plus the deterministic chalk bracket.
@@ -24,7 +27,7 @@ import datetime
 
 import numpy as np
 
-from . import forecast, refresh, tournament
+from . import forecast, live_grading, refresh, tournament
 from .confederations import confederation
 
 PROB_DP = 4
@@ -91,19 +94,35 @@ def game_mode_records(neutral_matrices: dict, teams_data: list[str], disp, top_k
     return out
 
 
-def group_stage_records(model, wc_fixtures, team_group: dict, disp, top_k: int = TOP_K) -> list[dict]:
-    """The 72 real group fixtures (true venue / host advantage), same fields as game mode.
+def group_stage_records(model, group_fixtures, team_group: dict, disp, frozen: dict,
+                        top_k: int = TOP_K) -> list[dict]:
+    """All 72 real group fixtures, played or not — the count stays 72 throughout the group stage.
 
-    `wc_fixtures` is the data's unplayed FIFA-World-Cup fixtures frame (home_team/away_team in
-    data spelling). Records are emitted only for fixtures present in the model's matrices.
+    `group_fixtures` is the data's full FIFA-World-Cup-2026 group fixtures frame (home_team/
+    away_team/home_score/away_score/played/result in data spelling), played + unplayed.
+
+    * **Unplayed** → the live as-of distribution read from the model's real-venue (host-aware)
+      matrix, exactly as before, with ``played: false``.
+    * **Played** → the ACTUAL result (``played: true``, real ``home_score``/``away_score``/
+      ``result``) plus the immutable **pre-match** prediction from the frozen pre-tournament
+      snapshot (`frozen`, display-name keyed) under ``prediction`` — kept for grading/display. The
+      live model is rebuilt with the result in it, so its matrix is no longer a pre-match view;
+      the snapshot is the leakage-free record of what was predicted before kickoff (``None`` only
+      if the snapshot predates the fixture).
     """
     out = []
-    for _, r in wc_fixtures.iterrows():
+    for _, r in group_fixtures.iterrows():
         h, a = r["home_team"], r["away_team"]
-        if (h, a) not in model.matrices:
-            continue
-        out.append({"group": team_group.get(h, "?"), "home": disp(h), "away": disp(a),
-                    **fixture_dist_json(model, h, a, top_k)})
+        dh, da = disp(h), disp(a)
+        rec = {"group": team_group.get(h, "?"), "home": dh, "away": da, "played": bool(r["played"])}
+        if not r["played"]:
+            rec.update(fixture_dist_json(model, h, a, top_k))
+        else:
+            rec["home_score"] = int(r["home_score"])
+            rec["away_score"] = int(r["away_score"])
+            rec["result"] = str(r["result"])
+            rec["prediction"] = frozen.get((dh, da))
+        out.append(rec)
     return out
 
 
@@ -173,9 +192,22 @@ def build_payload(model, sim_groups, display, info, matches, *,
     teams_data = [t for ts in gt.values() for t in ts]
     disp = lambda t: display.get(t, t)                       # noqa: E731  data -> display name
 
-    wc = matches[(matches["tournament"] == "FIFA World Cup") & (~matches["played"])]
+    # The 72 group fixtures, played OR not: the 2026 WC matches whose two teams share a group (the
+    # round-robin is intra-group; knockout pairs are inter-group, so this excludes them and the
+    # thousands of historical World Cup matches). Dedup to one row per unordered pair, earliest
+    # first, so a same-group knockout rematch can never inflate the count past 72.
+    wc = matches[(matches["tournament"].astype(str) == live_grading.WC_TOURNAMENT)
+                 & (matches["year"] == live_grading.WC_YEAR)
+                 & matches["home_team"].isin(teams_data) & matches["away_team"].isin(teams_data)].copy()
+    same_group = wc["home_team"].map(team_group) == wc["away_team"].map(team_group)
+    group_fixtures = wc[same_group].sort_values("date", kind="stable").copy()
+    group_fixtures["_pair"] = [frozenset((h, a)) for h, a
+                              in zip(group_fixtures["home_team"], group_fixtures["away_team"])]
+    group_fixtures = group_fixtures.drop_duplicates("_pair", keep="first").drop(columns="_pair")
+    frozen = live_grading.frozen_group_fixtures(refresh.PRETOURNAMENT_JSON)
+
     fixtures_by_group: dict = {}
-    for _, r in wc.iterrows():
+    for _, r in group_fixtures.iterrows():
         h, a = r["home_team"], r["away_team"]
         if (h, a) in model.matrices:
             fixtures_by_group.setdefault(team_group[h], []).append((h, a))
@@ -193,8 +225,10 @@ def build_payload(model, sim_groups, display, info, matches, *,
         "tournament_seed": seed, "tournament_levels": list(levels),
         "rounding": {"prob_dp": PROB_DP, "expected_goals_dp": EG_DP},
         "note": f"Reporting export of the shipped v{version} model (no refit). Game mode is "
-                "neutral-venue; group stage uses each fixture's true venue and matches "
-                "forecast_2026.json. The goals model is over-dispersed (livelier scorelines, same "
+                "neutral-venue; the group stage always lists all 72 fixtures — unplayed ones use "
+                "each fixture's true venue and match forecast_2026.json, played ones carry the real "
+                "result plus the frozen pre-tournament prediction. The goals model is over-dispersed "
+                "(livelier scorelines, same "
                 "E[goals] and W/D/L). Tournament odds reuse forecast.run_probabilities at one fixed "
                 "seed across N (not averaged); the chalk bracket is the deterministic favourites-hold "
                 "path, NOT a probability.",
@@ -203,7 +237,7 @@ def build_payload(model, sim_groups, display, info, matches, *,
         "metadata": metadata,
         "structure": structure_records(gt, teams_data, disp),
         "game_mode": game_mode_records(info["neutral_matrices"], teams_data, disp),
-        "group_stage": group_stage_records(model, wc, team_group, disp),
+        "group_stage": group_stage_records(model, group_fixtures, team_group, disp, frozen),
         "tournament": {
             "seed": seed, "levels": list(levels),
             "by_n": tournament_records(model, gt, team_group, disp, levels, seed),

@@ -118,8 +118,19 @@
     };
     return null;
   }
-  // A group fixture reads its OWN fields (real venue), from the home team's perspective.
+  // A group fixture reads its OWN fields (real venue), from the home team's perspective. A played
+  // fixture shows the real full-time score plus the immutable pre-match prediction (reduced fields:
+  // the frozen snapshot has no top-N / goal-totals, so those cards are simply omitted).
   function fixtureMatch(fx) {
+    if (fx.played) {
+      var pr = fx.prediction || {};
+      return {
+        played: true, result: fx.result, score: [fx.home_score, fx.away_score],
+        predScore: pr.modal ? parseScore(pr.modal) : null,
+        pWin: pr.p_home, pDraw: pr.p_draw, pLoss: pr.p_away, e1: pr.e_home, e2: pr.e_away,
+        top: null, pOver25: null, goalTotals: null
+      };
+    }
     return {
       score: parseScore(fx.modal), pWin: fx.p_home, pDraw: fx.p_draw, pLoss: fx.p_away,
       e1: fx.e_home, e2: fx.e_away, top: fx.top.map(function (t) { return { score: parseScore(t[0]), p: t[1] }; }),
@@ -130,22 +141,32 @@
   // ---- shared match panel (game result + detail modal) --------------------
   function buildMatchPanel(home, away, m) {
     var frag = document.createDocumentFragment();
-    var sb = el("div", "scoreboard");
+    var sb = el("div", "scoreboard" + (m.played ? " scoreboard--played" : ""));
     sb.appendChild(scoreTeam(home, "home"));
     var sc = el("div", "scoreboard__score");
-    var p1 = (m.top && m.top[0]) ? m.top[0].p : null;       // top-1 scoreline probability
-    sc.appendChild(el("span", "scoreboard__label", p1 != null ? "most likely · " + pct(p1) : "most likely"));
-    sc.appendChild(el("span", "scoreboard__digits", m.score[0] + "–" + m.score[1]));
-    sc.appendChild(el("span", "scoreboard__xg", "xG " + m.e1.toFixed(1) + " – " + m.e2.toFixed(1)));
+    if (m.played) {
+      sc.appendChild(el("span", "scoreboard__label", "full time"));
+      sc.appendChild(el("span", "scoreboard__digits", m.score[0] + "–" + m.score[1]));
+      if (m.predScore) sc.appendChild(el("span", "scoreboard__xg", "predicted " + m.predScore[0] + "–" + m.predScore[1]));
+    } else {
+      var p1 = (m.top && m.top[0]) ? m.top[0].p : null;     // top-1 scoreline probability
+      sc.appendChild(el("span", "scoreboard__label", p1 != null ? "most likely · " + pct(p1) : "most likely"));
+      sc.appendChild(el("span", "scoreboard__digits", m.score[0] + "–" + m.score[1]));
+      sc.appendChild(el("span", "scoreboard__xg", "xG " + m.e1.toFixed(1) + " – " + m.e2.toFixed(1)));
+    }
     sb.appendChild(sc);
     sb.appendChild(scoreTeam(away, "away"));
     frag.appendChild(sb);
-    frag.appendChild(buildWDL(home, away, m));
+    // Pre-match W/D/L call (for a played game, what the model predicted before kickoff).
+    if (m.pWin != null) {
+      if (m.played) frag.appendChild(el("p", "panel-caption", "Pre-match prediction"));
+      frag.appendChild(buildWDL(home, away, m));
+    }
     var cards = el("div", "cards");
-    cards.appendChild(buildXG(home, away, m));
-    cards.appendChild(buildTop3(m.top));
+    if (!m.played && m.e1 != null) cards.appendChild(buildXG(home, away, m));
+    if (m.top) cards.appendChild(buildTop3(m.top));
     if (m.goalTotals) cards.appendChild(buildTotals(m));
-    frag.appendChild(cards);
+    if (cards.childNodes.length) frag.appendChild(cards);
     return frag;
   }
   // Total-goals card: P(over 2.5) headline + a P(0,1,2,3,4,5+) bar (over-2.5 buckets tinted).
@@ -349,10 +370,16 @@
 
       var fl = el("div", "gfix");
       (fbg[g] || []).forEach(function (fx) {
-        var row = el("button", "gfix__row");
+        var played = !!fx.played;
+        var row = el("button", "gfix__row" + (played ? " gfix__row--played" : ""));
         var scoreCell = el("div", "gfix__sc");
-        scoreCell.appendChild(el("span", "gfix__score", scoreText(fx.modal)));
-        scoreCell.appendChild(el("span", "gfix__xg", "xG " + fx.e_home.toFixed(1) + "–" + fx.e_away.toFixed(1)));
+        if (played) {
+          scoreCell.appendChild(el("span", "gfix__score", fx.home_score + "–" + fx.away_score));
+          scoreCell.appendChild(el("span", "gfix__ft", "full time"));
+        } else {
+          scoreCell.appendChild(el("span", "gfix__score", scoreText(fx.modal)));
+          scoreCell.appendChild(el("span", "gfix__xg", "xG " + fx.e_home.toFixed(1) + "–" + fx.e_away.toFixed(1)));
+        }
         row.appendChild(miniTeam(fx.home, false));
         row.appendChild(scoreCell);
         row.appendChild(miniTeam(fx.away, true));
