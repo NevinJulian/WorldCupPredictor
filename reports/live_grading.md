@@ -1,16 +1,16 @@
 # WC 2026 — live forecast grading (A/B)
 
-*Generated 2026-06-19; data as-of 2026-06-17. Running RPS (lower is better) of the **pre-match** prediction for every played WC-2026 match, for three variants on the same fixtures. As-of / leakage-free: each live prediction is built from data strictly before the match's matchday. Frozen = the immutable pre-tournament forecast (group fixtures only). The headline is the live **result-only vs xG-adjusted** A/B.*
+*Generated 2026-06-20; data as-of 2026-06-19. Running RPS (lower is better) of the **pre-match** prediction for every played WC-2026 match, for three variants on the same fixtures. As-of / leakage-free: each live prediction is built from data strictly before the match's matchday. Frozen = the immutable pre-tournament forecast (group fixtures only). The headline is the live **result-only vs xG-adjusted** A/B.*
 
 ## Running RPS
 
-Headline A/B over all 24 graded matches: result-only **0.1964** vs xG-adjusted **0.1964** → tied so far.
+Headline A/B over all 32 graded matches: result-only **0.1830** vs xG-adjusted **0.1830** → tied so far.
 
 | Variant | RPS (all matches) | RPS (group fixtures) | n |
 |--|--:|--:|--:|
-| Frozen pre-tournament | — | 0.1941 | 24 |
-| Live result-only (xG off) | 0.1964 | 0.1964 | 24 |
-| Live xG-adjusted (xG on) | 0.1964 | 0.1964 | 24 |
+| Frozen pre-tournament | — | 0.1797 | 32 |
+| Live result-only (xG off) | 0.1830 | 0.1830 | 32 |
+| Live xG-adjusted (xG on) | 0.1830 | 0.1830 | 32 |
 
 *The group-fixtures column is the clean three-way comparison on identical fixtures; the all-matches column adds knockout games (frozen has no knockout prediction).*
 
@@ -42,5 +42,13 @@ Headline A/B over all 24 graded matches: result-only **0.1964** vs xG-adjusted *
 | 2026-06-17 | group | Uzbekistan v Colombia | 1-3 | A | 0.1036 | 0.0837 | 0.0837 |
 | 2026-06-17 | group | England v Croatia | 4-2 | H | 0.1617 | 0.1684 | 0.1684 |
 | 2026-06-17 | group | Ghana v Panama | 1-0 | H | 0.4328 | 0.4273 | 0.4273 |
+| 2026-06-18 | group | Czechia v South Africa | 1-1 | D | 0.1590 | 0.1512 | 0.1512 |
+| 2026-06-18 | group | Mexico v South Korea | 1-0 | H | 0.1159 | 0.1162 | 0.1162 |
+| 2026-06-18 | group | Switzerland v Bosnia and Herzegovina | 4-1 | H | 0.0595 | 0.0750 | 0.0750 |
+| 2026-06-18 | group | Canada v Qatar | 6-0 | H | 0.0338 | 0.0394 | 0.0394 |
+| 2026-06-19 | group | Scotland v Morocco | 0-1 | A | 0.1372 | 0.1450 | 0.1450 |
+| 2026-06-19 | group | Brazil v Haiti | 3-0 | H | 0.0206 | 0.0227 | 0.0227 |
+| 2026-06-19 | group | United States v Australia | 2-0 | H | 0.2895 | 0.3093 | 0.3093 |
+| 2026-06-19 | group | Türkiye v Paraguay | 0-1 | A | 0.2780 | 0.2845 | 0.2845 |
 
-*24 matches graded (24 group). Early on the sample is small and result-only ≈ xG-adjusted (few prior games to re-weight); the gap is meaningful only as games accumulate.*
+*32 matches graded (32 group). Early on the sample is small and result-only ≈ xG-adjusted (few prior games to re-weight); the gap is meaningful only as games accumulate.*
