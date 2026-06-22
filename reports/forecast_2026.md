@@ -1,61 +1,61 @@
 # WC 2026 forecast — frozen record
 
-*Model: ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket (v0.4.0, rating_sigma=0). As-of 2026-06-20; generated 2026-06-21.*
+*Model: ForecastMatchModel (over-dispersed Dixon-Coles scorelines reweighted to the GBM+DC ensemble H/D/A, with per-confederation calibration), Annex-C bracket (v0.4.0, rating_sigma=0). As-of 2026-06-21; generated 2026-06-22.*
 
-**Monte Carlo:** N=50,000, seed=20260611 (one run — **not** averaged). Binomial SE = binomial sqrt(p(1-p)/N) (max ≈ 0.22 pp at p=0.5). Ensemble weight w_gbm=0.77.
+**Monte Carlo:** N=50,000, seed=20260611 (one run — **not** averaged). Binomial SE = binomial sqrt(p(1-p)/N) (max ≈ 0.22 pp at p=0.5). Ensemble weight w_gbm=0.74.
 
 ## 1. Probabilities (per team)
 
 | Team | Grp | Advance | R16 | QF | SF | Final | Title (±SE) |
 |------|:--:|--:|--:|--:|--:|--:|--:|
-| Argentina | J | 97.5% | 73.0% | 61.3% | 47.6% | 33.0% | 23.1% ±0.19 |
-| Spain | H | 97.8% | 70.1% | 54.3% | 43.4% | 28.0% | 19.3% ±0.18 |
-| France | I | 95.7% | 73.8% | 50.5% | 33.3% | 20.1% | 9.6% ±0.13 |
-| England | L | 96.6% | 72.9% | 50.5% | 32.4% | 19.3% | 9.5% ±0.13 |
-| Brazil | C | 96.1% | 69.2% | 48.5% | 30.4% | 19.0% | 9.1% ±0.13 |
-| Colombia | K | 94.0% | 68.5% | 44.4% | 23.7% | 11.9% | 6.0% ±0.11 |
-| Netherlands | F | 92.4% | 49.6% | 34.1% | 18.4% | 9.0% | 3.6% ±0.08 |
-| Germany | E | 94.2% | 63.2% | 32.1% | 17.2% | 8.4% | 3.3% ±0.08 |
-| Portugal | K | 88.0% | 56.5% | 31.4% | 15.4% | 6.2% | 2.7% ±0.07 |
-| Morocco | C | 89.0% | 49.9% | 29.4% | 14.2% | 5.9% | 2.1% ±0.06 |
-| Belgium | G | 89.3% | 61.5% | 34.0% | 13.5% | 4.9% | 2.0% ±0.06 |
-| Japan | F | 87.4% | 39.4% | 22.3% | 10.1% | 4.0% | 1.4% ±0.05 |
-| Mexico | A | 90.9% | 59.9% | 26.5% | 10.7% | 4.1% | 1.2% ±0.05 |
-| Uruguay | H | 90.2% | 39.4% | 20.5% | 9.9% | 3.3% | 1.2% ±0.05 |
-| Switzerland | B | 94.3% | 60.4% | 25.6% | 9.2% | 3.2% | 1.0% ±0.04 |
-| Ecuador | E | 88.8% | 49.2% | 21.0% | 8.8% | 3.3% | 0.9% ±0.04 |
-| Norway | I | 77.1% | 41.0% | 19.3% | 7.6% | 2.7% | 0.8% ±0.04 |
-| Croatia | L | 83.5% | 40.5% | 17.3% | 7.1% | 2.2% | 0.7% ±0.04 |
-| United States | D | 77.5% | 42.0% | 15.8% | 4.7% | 1.1% | 0.3% ±0.03 |
-| Iran | G | 80.4% | 43.2% | 16.2% | 4.5% | 1.2% | 0.3% ±0.03 |
-| Australia | D | 74.8% | 41.3% | 15.6% | 4.8% | 1.3% | 0.3% ±0.03 |
-| Austria | J | 71.2% | 25.4% | 10.8% | 3.9% | 1.0% | 0.3% ±0.02 |
-| South Korea | A | 80.4% | 41.5% | 14.2% | 4.0% | 1.1% | 0.2% ±0.02 |
-| Canada | B | 90.8% | 47.5% | 15.8% | 4.0% | 1.0% | 0.2% ±0.02 |
-| Senegal | I | 67.4% | 29.4% | 10.9% | 3.4% | 0.9% | 0.2% ±0.02 |
-| Algeria | J | 64.5% | 21.9% | 8.5% | 2.7% | 0.6% | 0.1% ±0.02 |
-| Paraguay | D | 64.8% | 30.6% | 9.9% | 2.6% | 0.6% | 0.1% ±0.02 |
-| Türkiye | D | 56.7% | 26.0% | 8.2% | 2.3% | 0.5% | 0.1% ±0.01 |
-| Ivory Coast | E | 73.0% | 28.4% | 8.3% | 2.3% | 0.5% | 0.1% ±0.01 |
-| Egypt | G | 69.2% | 30.0% | 8.5% | 1.9% | 0.4% | 0.1% ±0.01 |
-| Scotland | C | 60.6% | 18.8% | 6.0% | 1.4% | 0.3% | 0.0% ±0.01 |
-| Sweden | F | 57.7% | 13.3% | 4.2% | 0.9% | 0.2% | 0.0% ±0.01 |
-| Czechia | A | 56.6% | 21.0% | 4.9% | 0.8% | 0.2% | 0.0% ±0.01 |
-| Panama | L | 50.3% | 11.5% | 2.8% | 0.6% | 0.1% | 0.0% ±0.01 |
-| DR Congo | K | 37.9% | 9.6% | 2.1% | 0.5% | 0.1% | 0.0% ±0.00 |
-| Uzbekistan | K | 43.9% | 11.4% | 2.9% | 0.6% | 0.1% | 0.0% ±0.00 |
-| New Zealand | G | 29.5% | 7.2% | 1.0% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Jordan | J | 31.1% | 6.0% | 1.2% | 0.2% | 0.0% | 0.0% ±0.00 |
-| South Africa | A | 41.4% | 9.9% | 1.6% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Saudi Arabia | H | 41.3% | 7.7% | 1.5% | 0.2% | 0.0% | 0.0% ±0.00 |
-| Bosnia and Herzegovina | B | 47.6% | 9.3% | 1.4% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Qatar | B | 33.3% | 5.2% | 0.6% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Haiti | C | 20.3% | 2.8% | 0.4% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Curaçao | E | 15.0% | 1.7% | 0.1% | 0.0% | 0.0% | 0.0% ±0.00 |
-| Tunisia | F | 32.0% | 5.1% | 1.0% | 0.2% | 0.0% | 0.0% ±0.00 |
-| Cape Verde | H | 29.0% | 4.4% | 0.6% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Iraq | I | 27.4% | 5.4% | 0.9% | 0.1% | 0.0% | 0.0% ±0.00 |
-| Ghana | L | 31.7% | 4.7% | 0.8% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Argentina | J | 97.5% | 75.0% | 63.2% | 49.5% | 34.2% | 24.4% ±0.19 |
+| Spain | H | 98.6% | 73.3% | 57.0% | 46.0% | 29.4% | 20.5% ±0.18 |
+| England | L | 97.0% | 72.7% | 50.1% | 32.0% | 19.5% | 9.4% ±0.13 |
+| Brazil | C | 96.1% | 69.0% | 48.8% | 30.8% | 19.2% | 9.1% ±0.13 |
+| France | I | 95.3% | 73.2% | 49.5% | 32.3% | 19.6% | 8.7% ±0.13 |
+| Colombia | K | 93.3% | 67.6% | 42.1% | 22.7% | 10.9% | 5.6% ±0.10 |
+| Netherlands | F | 91.2% | 49.6% | 33.6% | 18.2% | 8.8% | 3.3% ±0.08 |
+| Germany | E | 93.6% | 61.0% | 30.8% | 16.7% | 7.8% | 2.9% ±0.07 |
+| Portugal | K | 88.1% | 57.0% | 31.8% | 15.5% | 6.4% | 2.7% ±0.07 |
+| Morocco | C | 88.6% | 49.7% | 29.3% | 14.4% | 6.1% | 2.1% ±0.06 |
+| Belgium | G | 88.4% | 60.8% | 32.6% | 12.5% | 4.5% | 1.9% ±0.06 |
+| Mexico | A | 91.2% | 60.0% | 26.2% | 10.9% | 4.2% | 1.3% ±0.05 |
+| Japan | F | 87.2% | 39.1% | 22.3% | 9.9% | 3.9% | 1.2% ±0.05 |
+| Switzerland | B | 92.8% | 58.4% | 25.8% | 9.5% | 3.3% | 1.0% ±0.04 |
+| Ecuador | E | 89.1% | 50.1% | 21.7% | 9.1% | 3.4% | 0.9% ±0.04 |
+| Uruguay | H | 85.1% | 34.6% | 17.4% | 7.9% | 2.4% | 0.8% ±0.04 |
+| Norway | I | 75.6% | 40.5% | 19.1% | 7.3% | 2.7% | 0.7% ±0.04 |
+| Croatia | L | 81.8% | 38.6% | 15.7% | 6.3% | 1.9% | 0.6% ±0.03 |
+| Iran | G | 78.9% | 43.0% | 16.0% | 4.6% | 1.3% | 0.4% ±0.03 |
+| Australia | D | 74.2% | 40.6% | 15.7% | 4.7% | 1.2% | 0.3% ±0.03 |
+| United States | D | 77.1% | 41.2% | 15.9% | 4.6% | 1.2% | 0.3% ±0.02 |
+| Austria | J | 71.1% | 25.0% | 10.8% | 3.9% | 0.9% | 0.3% ±0.02 |
+| Canada | B | 91.6% | 46.7% | 15.9% | 4.1% | 1.0% | 0.3% ±0.02 |
+| South Korea | A | 79.9% | 41.3% | 14.1% | 4.2% | 1.1% | 0.2% ±0.02 |
+| Senegal | I | 69.3% | 30.2% | 11.2% | 3.5% | 1.1% | 0.2% ±0.02 |
+| Egypt | G | 74.2% | 35.8% | 11.8% | 2.8% | 0.7% | 0.2% ±0.02 |
+| Algeria | J | 66.0% | 22.2% | 8.7% | 2.7% | 0.5% | 0.1% ±0.02 |
+| Türkiye | D | 57.5% | 26.5% | 8.3% | 2.1% | 0.4% | 0.1% ±0.02 |
+| Paraguay | D | 64.6% | 30.9% | 10.1% | 2.5% | 0.6% | 0.1% ±0.02 |
+| Ivory Coast | E | 71.1% | 27.3% | 8.3% | 2.3% | 0.5% | 0.1% ±0.01 |
+| Scotland | C | 60.5% | 18.8% | 5.9% | 1.4% | 0.3% | 0.0% ±0.01 |
+| Czechia | A | 55.7% | 21.1% | 5.3% | 0.9% | 0.1% | 0.0% ±0.01 |
+| Sweden | F | 57.9% | 13.6% | 4.3% | 1.0% | 0.2% | 0.0% ±0.01 |
+| Uzbekistan | K | 45.0% | 12.9% | 3.3% | 0.7% | 0.1% | 0.0% ±0.01 |
+| Panama | L | 49.1% | 11.6% | 3.0% | 0.6% | 0.1% | 0.0% ±0.01 |
+| Saudi Arabia | H | 42.8% | 7.6% | 1.5% | 0.2% | 0.0% | 0.0% ±0.00 |
+| DR Congo | K | 38.1% | 9.8% | 2.2% | 0.5% | 0.1% | 0.0% ±0.00 |
+| Bosnia and Herzegovina | B | 47.8% | 9.8% | 1.7% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Ghana | L | 34.3% | 5.2% | 0.8% | 0.1% | 0.0% | 0.0% ±0.00 |
+| South Africa | A | 42.0% | 10.6% | 1.8% | 0.2% | 0.0% | 0.0% ±0.00 |
+| Qatar | B | 35.1% | 5.5% | 0.6% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Haiti | C | 20.3% | 2.9% | 0.4% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Curaçao | E | 16.6% | 1.9% | 0.2% | 0.0% | 0.0% | 0.0% ±0.00 |
+| Tunisia | F | 33.0% | 5.3% | 1.1% | 0.2% | 0.0% | 0.0% ±0.00 |
+| New Zealand | G | 28.5% | 6.1% | 0.8% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Cape Verde | H | 32.6% | 5.1% | 1.0% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Iraq | I | 26.4% | 5.4% | 0.9% | 0.1% | 0.0% | 0.0% ±0.00 |
+| Jordan | J | 28.4% | 5.8% | 1.2% | 0.2% | 0.0% | 0.0% ±0.00 |
 
 *(Full per-cell SE in the JSON.)*
 
@@ -65,109 +65,109 @@
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Mexico | 51.2% | 28.2% | 14.4% | 90.9% |
-| South Korea | 29.5% | 33.6% | 23.2% | 80.4% |
-| Czechia | 12.5% | 22.3% | 32.7% | 56.6% |
-| South Africa | 6.9% | 15.9% | 29.8% | 41.4% |
+| Mexico | 52.0% | 28.2% | 13.9% | 91.2% |
+| South Korea | 29.4% | 33.5% | 23.5% | 79.9% |
+| Czechia | 11.6% | 22.1% | 32.8% | 55.7% |
+| South Africa | 7.0% | 16.2% | 29.8% | 42.0% |
 
 **Group B**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Switzerland | 49.8% | 34.7% | 12.0% | 94.3% |
-| Canada | 40.9% | 37.6% | 15.6% | 90.8% |
-| Bosnia and Herzegovina | 5.9% | 16.3% | 40.7% | 47.6% |
-| Qatar | 3.5% | 11.3% | 31.6% | 33.3% |
+| Switzerland | 44.8% | 36.6% | 14.0% | 92.8% |
+| Canada | 45.1% | 34.9% | 14.7% | 91.6% |
+| Bosnia and Herzegovina | 6.1% | 16.7% | 39.3% | 47.8% |
+| Qatar | 4.0% | 11.8% | 32.0% | 35.1% |
 
 **Group C**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Brazil | 59.9% | 27.5% | 10.4% | 96.1% |
-| Morocco | 29.7% | 42.4% | 22.0% | 89.0% |
-| Scotland | 8.8% | 23.3% | 44.5% | 60.6% |
-| Haiti | 1.6% | 6.8% | 23.1% | 20.3% |
+| Brazil | 58.9% | 28.2% | 10.5% | 96.1% |
+| Morocco | 30.4% | 41.7% | 21.7% | 88.6% |
+| Scotland | 9.1% | 23.1% | 44.6% | 60.5% |
+| Haiti | 1.5% | 7.0% | 23.3% | 20.3% |
 
 **Group D**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| United States | 33.1% | 27.3% | 22.3% | 77.5% |
-| Australia | 30.1% | 27.0% | 23.4% | 74.8% |
-| Paraguay | 20.7% | 24.2% | 27.3% | 64.8% |
-| Türkiye | 16.1% | 21.5% | 27.1% | 56.7% |
+| United States | 33.2% | 26.9% | 22.2% | 77.1% |
+| Australia | 29.5% | 26.8% | 23.5% | 74.2% |
+| Paraguay | 20.4% | 24.3% | 27.5% | 64.6% |
+| Türkiye | 16.9% | 21.9% | 26.8% | 57.5% |
 
 **Group E**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Germany | 50.8% | 29.7% | 16.1% | 94.2% |
-| Ecuador | 32.2% | 37.6% | 24.3% | 88.8% |
-| Ivory Coast | 15.9% | 27.9% | 41.6% | 73.0% |
-| Curaçao | 1.1% | 4.9% | 17.9% | 15.0% |
+| Germany | 48.8% | 31.2% | 16.1% | 93.6% |
+| Ecuador | 35.1% | 36.4% | 22.8% | 89.1% |
+| Ivory Coast | 14.7% | 26.8% | 42.1% | 71.1% |
+| Curaçao | 1.5% | 5.6% | 19.0% | 16.6% |
 
 **Group F**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Netherlands | 51.0% | 29.9% | 14.4% | 92.4% |
-| Japan | 34.7% | 36.8% | 20.1% | 87.4% |
-| Sweden | 10.5% | 22.1% | 37.5% | 57.7% |
-| Tunisia | 3.8% | 11.2% | 27.9% | 32.0% |
+| Netherlands | 47.9% | 30.9% | 15.6% | 91.2% |
+| Japan | 36.7% | 35.1% | 19.8% | 87.2% |
+| Sweden | 11.5% | 22.1% | 36.4% | 57.9% |
+| Tunisia | 3.9% | 11.9% | 28.2% | 33.0% |
 
 **Group G**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Belgium | 48.9% | 27.7% | 16.4% | 89.3% |
-| Iran | 29.1% | 33.0% | 24.9% | 80.4% |
-| Egypt | 18.0% | 27.9% | 33.4% | 69.2% |
-| New Zealand | 4.0% | 11.4% | 25.3% | 29.5% |
+| Belgium | 45.3% | 28.6% | 18.5% | 88.4% |
+| Iran | 28.0% | 30.9% | 27.1% | 78.9% |
+| Egypt | 22.7% | 29.3% | 30.8% | 74.2% |
+| New Zealand | 3.9% | 11.2% | 23.5% | 28.5% |
 
 **Group H**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Spain | 66.0% | 26.7% | 5.9% | 97.8% |
-| Uruguay | 28.8% | 49.2% | 16.8% | 90.2% |
-| Saudi Arabia | 3.3% | 14.6% | 42.8% | 41.3% |
-| Cape Verde | 1.9% | 9.5% | 34.4% | 29.0% |
+| Spain | 73.2% | 21.5% | 4.5% | 98.6% |
+| Uruguay | 21.4% | 49.2% | 21.1% | 85.1% |
+| Saudi Arabia | 3.3% | 16.5% | 40.9% | 42.8% |
+| Cape Verde | 2.1% | 12.8% | 33.5% | 32.6% |
 
 **Group I**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| France | 62.0% | 25.0% | 10.2% | 95.7% |
-| Norway | 21.5% | 35.5% | 27.8% | 77.1% |
-| Senegal | 13.7% | 29.0% | 36.8% | 67.4% |
-| Iraq | 2.8% | 10.4% | 25.3% | 27.4% |
+| France | 61.0% | 25.3% | 10.8% | 95.3% |
+| Norway | 20.8% | 34.4% | 29.1% | 75.6% |
+| Senegal | 15.6% | 30.0% | 35.5% | 69.3% |
+| Iraq | 2.7% | 10.3% | 24.6% | 26.4% |
 
 **Group J**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Argentina | 72.4% | 19.7% | 6.4% | 97.5% |
-| Austria | 14.1% | 36.0% | 31.1% | 71.2% |
-| Algeria | 10.7% | 30.9% | 35.4% | 64.5% |
-| Jordan | 2.9% | 13.3% | 27.0% | 31.1% |
+| Argentina | 72.3% | 19.8% | 6.5% | 97.5% |
+| Austria | 13.6% | 36.4% | 31.6% | 71.1% |
+| Algeria | 11.4% | 31.4% | 36.1% | 66.0% |
+| Jordan | 2.7% | 12.4% | 25.8% | 28.4% |
 
 **Group K**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| Colombia | 54.6% | 30.7% | 11.0% | 94.0% |
-| Portugal | 35.6% | 39.3% | 17.7% | 88.0% |
-| Uzbekistan | 5.3% | 16.1% | 37.4% | 43.9% |
-| DR Congo | 4.5% | 14.0% | 34.0% | 37.9% |
+| Colombia | 50.1% | 32.9% | 12.8% | 93.3% |
+| Portugal | 38.8% | 36.3% | 17.4% | 88.1% |
+| Uzbekistan | 6.2% | 16.6% | 36.8% | 45.0% |
+| DR Congo | 5.0% | 14.2% | 32.9% | 38.1% |
 
 **Group L**
 
 | Team | Win | Runner-up | 3rd | Advance |
 |--|--:|--:|--:|--:|
-| England | 64.7% | 25.2% | 8.1% | 96.6% |
-| Croatia | 25.8% | 42.2% | 22.2% | 83.5% |
-| Panama | 6.3% | 20.8% | 38.8% | 50.3% |
-| Ghana | 3.2% | 11.9% | 30.9% | 31.7% |
+| England | 66.8% | 24.0% | 7.3% | 97.0% |
+| Croatia | 23.9% | 41.5% | 23.8% | 81.8% |
+| Panama | 6.1% | 21.1% | 37.0% | 49.1% |
+| Ghana | 3.2% | 13.3% | 31.8% | 34.3% |
 
 ## 2. Expected group goals (no simulation)
 
@@ -177,112 +177,108 @@ From each fixture's scoreline matrix: E[goals], the single most-likely scoreline
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Mexico | Czechia | 1.95 | 0.87 | **1-1** | 58/28/14 |
-| South Africa | South Korea | 0.67 | 1.37 | **0-1** | 17/29/53 |
+| Mexico | Czechia | 1.99 | 0.85 | **1-1** | 60/27/13 |
+| South Africa | South Korea | 0.69 | 1.36 | **0-1** | 19/28/53 |
 
 **Group B**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Canada | Switzerland | 1.35 | 1.32 | **1-1** | 34/29/37 |
-| Bosnia and Herzegovina | Qatar | 1.33 | 1.08 | **1-0** | 44/27/29 |
+| Canada | Switzerland | 1.46 | 1.22 | **1-1** | 40/30/31 |
+| Bosnia and Herzegovina | Qatar | 1.32 | 1.12 | **1-0** | 44/24/32 |
 
 **Group C**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Scotland | Brazil | 0.67 | 1.93 | **0-0** | 13/27/60 |
-| Morocco | Haiti | 1.96 | 0.56 | **1-0** | 73/19/8 |
+| Scotland | Brazil | 0.67 | 1.94 | **0-1** | 14/25/61 |
+| Morocco | Haiti | 1.94 | 0.57 | **1-0** | 72/20/8 |
 
 **Group D**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| United States | Türkiye | 1.83 | 1.14 | **1-1** | 49/28/23 |
-| Paraguay | Australia | 0.90 | 1.15 | **0-0** | 31/29/41 |
+| United States | Türkiye | 1.82 | 1.14 | **1-1** | 48/28/23 |
+| Paraguay | Australia | 0.90 | 1.15 | **0-0** | 31/28/41 |
 
 **Group E**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Curaçao | Ivory Coast | 0.71 | 1.83 | **0-1** | 13/26/61 |
-| Ecuador | Germany | 1.07 | 1.34 | **0-1** | 31/27/42 |
+| Curaçao | Ivory Coast | 0.73 | 1.81 | **0-1** | 14/25/60 |
+| Ecuador | Germany | 1.15 | 1.24 | **1-1** | 36/28/36 |
 
 **Group F**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Japan | Sweden | 1.81 | 0.94 | **1-0** | 58/22/20 |
-| Tunisia | Netherlands | 0.65 | 1.85 | **0-1** | 9/24/67 |
+| Japan | Sweden | 1.77 | 0.98 | **1-0** | 56/21/23 |
+| Tunisia | Netherlands | 0.65 | 1.85 | **0-1** | 9/25/66 |
 
 **Group G**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Belgium | Iran | 1.45 | 1.08 | **1-0** | 49/20/30 |
-| New Zealand | Egypt | 0.73 | 1.44 | **0-1** | 15/29/55 |
-| Egypt | Iran | 0.85 | 1.20 | **0-1** | 27/28/45 |
-| New Zealand | Belgium | 0.78 | 1.92 | **1-1** | 9/30/60 |
+| Egypt | Iran | 0.94 | 1.07 | **0-0** | 33/30/37 |
+| New Zealand | Belgium | 0.76 | 1.98 | **0-1** | 9/28/63 |
 
 **Group H**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Spain | Saudi Arabia | 2.16 | 0.51 | **1-0** | 76/18/6 |
-| Uruguay | Cape Verde | 1.76 | 0.49 | **1-0** | 71/20/9 |
-| Cape Verde | Saudi Arabia | 0.86 | 1.07 | **0-0** | 30/30/40 |
-| Uruguay | Spain | 0.83 | 1.43 | **0-1** | 22/27/51 |
+| Cape Verde | Saudi Arabia | 0.89 | 1.12 | **0-1** | 32/25/43 |
+| Uruguay | Spain | 0.77 | 1.50 | **0-1** | 17/30/53 |
 
 **Group I**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| France | Iraq | 2.02 | 0.49 | **1-0** | 78/15/6 |
-| Norway | Senegal | 1.30 | 1.02 | **1-0** | 47/24/28 |
-| Norway | France | 0.89 | 1.65 | **0-1** | 21/25/55 |
-| Senegal | Iraq | 1.41 | 0.63 | **1-0** | 56/29/15 |
+| France | Iraq | 2.01 | 0.48 | **1-0** | 78/17/6 |
+| Norway | Senegal | 1.24 | 1.06 | **1-0** | 43/25/31 |
+| Norway | France | 0.88 | 1.65 | **0-1** | 20/26/54 |
+| Senegal | Iraq | 1.41 | 0.63 | **1-0** | 56/28/16 |
 
 **Group J**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Argentina | Austria | 1.90 | 0.63 | **1-0** | 66/22/11 |
-| Jordan | Algeria | 0.91 | 1.64 | **1-1** | 20/29/51 |
-| Algeria | Austria | 1.18 | 1.31 | **0-1** | 31/26/42 |
-| Jordan | Argentina | 0.51 | 2.23 | **0-1** | 4/24/72 |
+| Argentina | Austria | 1.90 | 0.62 | **1-0** | 66/24/10 |
+| Jordan | Algeria | 0.87 | 1.69 | **0-1** | 17/29/54 |
+| Algeria | Austria | 1.18 | 1.31 | **0-1** | 31/27/42 |
+| Jordan | Argentina | 0.51 | 2.25 | **0-1** | 4/22/73 |
 
 **Group K**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| Portugal | Uzbekistan | 1.68 | 0.69 | **1-0** | 60/26/14 |
-| Colombia | DR Congo | 1.74 | 0.52 | **1-0** | 67/24/9 |
-| Colombia | Portugal | 1.29 | 1.01 | **1-0** | 44/29/27 |
-| DR Congo | Uzbekistan | 0.89 | 1.05 | **0-0** | 32/28/39 |
+| Portugal | Uzbekistan | 1.70 | 0.71 | **1-0** | 61/23/16 |
+| Colombia | DR Congo | 1.77 | 0.52 | **1-0** | 69/21/9 |
+| Colombia | Portugal | 1.21 | 1.11 | **1-0** | 39/27/33 |
+| DR Congo | Uzbekistan | 0.88 | 1.07 | **0-1** | 32/28/40 |
 
 **Group L**
 
 | Home | Away | E[H] | E[A] | Most likely | P(H/D/A) |
 |--|--|--:|--:|:--:|:--:|
-| England | Ghana | 2.02 | 0.49 | **1-0** | 78/15/7 |
-| Panama | Croatia | 0.86 | 1.59 | **0-1** | 20/28/52 |
-| Panama | England | 0.57 | 1.94 | **0-1** | 7/26/67 |
-| Croatia | Ghana | 1.67 | 0.68 | **1-0** | 62/25/13 |
+| England | Ghana | 2.01 | 0.48 | **1-0** | 77/17/6 |
+| Panama | Croatia | 0.90 | 1.55 | **0-1** | 22/27/51 |
+| Panama | England | 0.57 | 1.95 | **0-1** | 6/26/68 |
+| Croatia | Ghana | 1.63 | 0.69 | **1-0** | 60/27/13 |
 
 ## Convergence check — title odds at 3 seeds (not averaged)
 
 | Team | seed 20260611 | seed 11 | seed 26 |
 |--|--:|--:|--:|
-| Brazil | 9.1% | 9.0% | 8.8% |
-| Spain | 19.3% | 19.1% | 19.2% |
-| France | 9.6% | 10.3% | 9.7% |
-| Argentina | 23.1% | 23.1% | 22.9% |
-| Colombia | 6.0% | 6.2% | 6.1% |
-| England | 9.5% | 9.4% | 9.8% |
+| Brazil | 9.1% | 9.2% | 9.3% |
+| Spain | 20.5% | 20.8% | 20.8% |
+| France | 8.7% | 8.7% | 8.7% |
+| Argentina | 24.4% | 23.9% | 23.7% |
+| Colombia | 5.6% | 5.7% | 5.7% |
+| England | 9.4% | 9.4% | 9.5% |
 
 ## 3. One sampled scenario — a single realization, NOT the average
 
-> **This is one random draw (seed 7), not a probability.** It shows what a single tournament *could* look like. Champion: **Spain**.
+> **This is one random draw (seed 7), not a probability.** It shows what a single tournament *could* look like. Champion: **Colombia**.
 
 ### Group stage
 
@@ -295,23 +291,23 @@ From each fixture's scoreline matrix: E[goals], the single most-likely scoreline
 | 3 | Czechia | 3 | -2 | 1-3 | 1-3 | — | 2-0 |
 | 4 | South Africa | 0 | -5 | 0-2 | 0-1 | 0-2 | — |
 
-**Group B** — through: Switzerland, Bosnia and Herzegovina
+**Group B** — through: Switzerland, Canada
 
-| Pos | Team | Pts | GD | v Switzerland | v Bosnia and Herzegovina | v Canada | v Qatar |
+| Pos | Team | Pts | GD | v Switzerland | v Canada | v Bosnia and Herzegovina | v Qatar |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Switzerland | 9 | +3 | — | 1-0 | 3-2 | 1-0 |
-| 2 | Bosnia and Herzegovina | 4 | +0 | 0-1 | — | 2-1 | 1-1 |
-| 3 | Canada | 3 | -1 | 2-3 | 1-2 | — | 1-0 |
-| 4 | Qatar | 1 | -2 | 0-1 | 1-1 | 0-1 | — |
+| 1 | Switzerland | 9 | +3 | — | 3-2 | 1-0 | 1-0 |
+| 2 | Canada | 4 | +0 | 2-3 | — | 1-1 | 1-0 |
+| 3 | Bosnia and Herzegovina | 2 | -1 | 0-1 | 1-1 | — | 1-1 |
+| 4 | Qatar | 1 | -2 | 0-1 | 0-1 | 1-1 | — |
 
-**Group C** — through: Morocco, Brazil
+**Group C** — through: Brazil, Morocco
 
-| Pos | Team | Pts | GD | v Morocco | v Brazil | v Scotland | v Haiti |
+| Pos | Team | Pts | GD | v Brazil | v Morocco | v Scotland | v Haiti |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Morocco | 9 | +8 | — | 2-1 | 2-0 | 6-1 |
-| 2 | Brazil | 6 | +10 | 1-2 | — | 8-0 | 4-1 |
-| 3 | Scotland | 3 | -9 | 0-2 | 0-8 | — | 1-0 |
-| 4 | Haiti | 0 | -9 | 1-6 | 1-4 | 0-1 | — |
+| 1 | Brazil | 7 | +11 | — | 1-1 | 8-0 | 4-1 |
+| 2 | Morocco | 7 | +7 | 1-1 | — | 2-0 | 6-1 |
+| 3 | Scotland | 3 | -9 | 0-8 | 0-2 | — | 1-0 |
+| 4 | Haiti | 0 | -9 | 1-4 | 1-6 | 0-1 | — |
 
 **Group D** — through: Paraguay, United States
 
@@ -335,28 +331,28 @@ From each fixture's scoreline matrix: E[goals], the single most-likely scoreline
 
 | Pos | Team | Pts | GD | v Japan | v Sweden | v Netherlands | v Tunisia |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Japan | 6 | +4 | — | 4-0 | 1-3 | 2-0 |
+| 1 | Japan | 6 | +3 | — | 4-0 | 0-3 | 2-0 |
 | 2 | Sweden | 6 | +2 | 0-4 | — | 3-0 | 3-0 |
-| 3 | Netherlands | 6 | +0 | 3-1 | 0-3 | — | 1-0 |
+| 3 | Netherlands | 6 | +1 | 3-0 | 0-3 | — | 1-0 |
 | 4 | Tunisia | 0 | -6 | 0-2 | 0-3 | 0-1 | — |
 
-**Group G** — through: Egypt, Belgium
+**Group G** — through: Belgium, Egypt
 
-| Pos | Team | Pts | GD | v Egypt | v Belgium | v Iran | v New Zealand |
+| Pos | Team | Pts | GD | v Belgium | v Egypt | v Iran | v New Zealand |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Egypt | 6 | +3 | — | 1-2 | 1-0 | 3-0 |
-| 2 | Belgium | 6 | +2 | 2-1 | — | 0-1 | 2-0 |
-| 3 | Iran | 6 | +1 | 0-1 | 1-0 | — | 1-0 |
-| 4 | New Zealand | 0 | -6 | 0-3 | 0-2 | 0-1 | — |
+| 1 | Belgium | 7 | +3 | — | 2-1 | 0-0 | 2-0 |
+| 2 | Egypt | 6 | +2 | 1-2 | — | 1-0 | 3-1 |
+| 3 | Iran | 2 | -1 | 0-0 | 0-1 | — | 1-1 |
+| 4 | New Zealand | 1 | -4 | 0-2 | 1-3 | 1-1 | — |
 
-**Group H** — through: Spain, Uruguay
+**Group H** — through: Uruguay, Spain
 
-| Pos | Team | Pts | GD | v Spain | v Uruguay | v Cape Verde | v Saudi Arabia |
+| Pos | Team | Pts | GD | v Uruguay | v Spain | v Saudi Arabia | v Cape Verde |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Spain | 7 | +2 | — | 1-0 | 1-1 | 1-0 |
-| 2 | Uruguay | 6 | +3 | 0-1 | — | 3-0 | 1-0 |
-| 3 | Cape Verde | 2 | -3 | 1-1 | 0-3 | — | 3-3 |
-| 4 | Saudi Arabia | 1 | -2 | 0-1 | 0-1 | 3-3 | — |
+| 1 | Uruguay | 6 | +3 | — | 0-1 | 1-0 | 3-0 |
+| 2 | Spain | 6 | +1 | 1-0 | — | 1-0 | 1-2 |
+| 3 | Saudi Arabia | 3 | -1 | 0-1 | 0-1 | — | 4-3 |
+| 4 | Cape Verde | 3 | -3 | 0-3 | 2-1 | 3-4 | — |
 
 **Group I** — through: France, Norway
 
@@ -380,63 +376,63 @@ From each fixture's scoreline matrix: E[goals], the single most-likely scoreline
 
 | Pos | Team | Pts | GD | v Portugal | v Uzbekistan | v Colombia | v DR Congo |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | Portugal | 9 | +8 | — | 2-0 | 3-1 | 4-0 |
-| 2 | Uzbekistan | 3 | +1 | 0-2 | — | 0-1 | 6-2 |
-| 3 | Colombia | 3 | -2 | 1-3 | 1-0 | — | 0-1 |
-| 4 | DR Congo | 3 | -7 | 0-4 | 2-6 | 1-0 | — |
+| 1 | Portugal | 9 | +7 | — | 2-0 | 3-2 | 4-0 |
+| 2 | Uzbekistan | 3 | +0 | 0-2 | — | 0-1 | 5-2 |
+| 3 | Colombia | 3 | -1 | 2-3 | 1-0 | — | 0-1 |
+| 4 | DR Congo | 3 | -6 | 0-4 | 2-5 | 1-0 | — |
 
-**Group L** — through: England, Panama
+**Group L** — through: England, Croatia
 
-| Pos | Team | Pts | GD | v England | v Panama | v Croatia | v Ghana |
+| Pos | Team | Pts | GD | v England | v Croatia | v Panama | v Ghana |
 |--:|--|--:|--:|--:|--:|--:|--:|
-| 1 | England | 9 | +5 | — | 2-0 | 3-1 | 2-1 |
-| 2 | Panama | 4 | -1 | 0-2 | — | 1-1 | 1-0 |
-| 3 | Croatia | 2 | -2 | 1-3 | 1-1 | — | 1-1 |
-| 4 | Ghana | 1 | -2 | 1-2 | 0-1 | 1-1 | — |
+| 1 | England | 9 | +5 | — | 3-1 | 2-0 | 2-1 |
+| 2 | Croatia | 4 | -1 | 1-3 | — | 1-1 | 1-0 |
+| 3 | Panama | 4 | -1 | 0-2 | 1-1 | — | 1-0 |
+| 4 | Ghana | 0 | -3 | 1-2 | 0-1 | 0-1 | — |
 
-**8 best third-placed (groups):** A, B, D, E, F, G, J, K
+**8 best third-placed (groups):** A, D, E, F, H, J, K, L
 
 ### Knockout bracket
 
 **R32**  
 - Ivory Coast 2-2 Australia → **Australia** *(pens)*
 - France 1-2 Netherlands → **Netherlands**
-- South Korea 1-0 Bosnia and Herzegovina → **South Korea**
-- Japan 1-5 Brazil → **Brazil**
-- Morocco 0-0 Sweden → **Morocco** *(pens)*
+- South Korea 0-2 Canada → **Canada**
+- Japan 2-0 Morocco → **Japan**
+- Brazil 0-0 Sweden → **Brazil** *(pens)*
 - Germany 0-0 Norway → **Germany** *(pens)*
-- Mexico 4-0 Ecuador → **Mexico**
+- Mexico 4-3 Saudi Arabia → **Mexico**
 - England 1-3 Colombia → **Colombia**
-- Uzbekistan 1-0 Panama → **Uzbekistan**
-- Spain 2-0 Austria → **Spain**
-- Paraguay 2-2 Canada → **Paraguay** *(pens)*
-- Egypt 1-2 Czechia → **Czechia**
-- Argentina 2-0 Uruguay → **Argentina**
-- United States 0-3 Belgium → **Belgium**
-- Switzerland 1-1 Iran → **Iran** *(pens)*
-- Portugal 4-0 Algeria → **Portugal**
+- Uzbekistan 0-3 Croatia → **Croatia**
+- Uruguay 1-1 Austria → **Austria** *(pens)*
+- Paraguay 0-1 Ecuador → **Ecuador**
+- Belgium 2-0 Czechia → **Belgium**
+- Argentina 2-0 Spain → **Argentina**
+- United States 0-3 Egypt → **Egypt**
+- Switzerland 1-2 Algeria → **Algeria**
+- Portugal 3-0 Panama → **Portugal**
 
 **R16**  
-- Australia 0-1 Netherlands → **Netherlands**
-- South Korea 2-4 Brazil → **Brazil**
-- Morocco 0-0 Germany → **Germany** *(pens)*
-- Mexico 2-0 Colombia → **Mexico**
-- Uzbekistan 0-1 Spain → **Spain**
-- Paraguay 1-0 Czechia → **Paraguay**
-- Argentina 3-1 Belgium → **Argentina**
-- Iran 0-0 Portugal → **Portugal** *(pens)*
+- Australia 2-4 Netherlands → **Netherlands**
+- Canada 0-1 Japan → **Japan**
+- Brazil 4-2 Germany → **Brazil**
+- Mexico 0-0 Colombia → **Colombia** *(pens)*
+- Croatia 2-2 Austria → **Croatia** *(pens)*
+- Ecuador 1-0 Belgium → **Ecuador**
+- Argentina 3-0 Egypt → **Argentina**
+- Algeria 0-0 Portugal → **Portugal** *(pens)*
 
 **QF**  
-- Netherlands 2-1 Brazil → **Netherlands**
-- Germany 1-3 Mexico → **Mexico**
-- Spain 3-0 Paraguay → **Spain**
-- Argentina 0-3 Portugal → **Portugal**
+- Netherlands 2-4 Japan → **Japan**
+- Brazil 1-1 Colombia → **Colombia** *(pens)*
+- Croatia 0-1 Ecuador → **Ecuador**
+- Argentina 0-2 Portugal → **Portugal**
 
 **SF**  
-- Netherlands 0-2 Mexico → **Mexico**
-- Spain 1-1 Portugal → **Spain** *(pens)*
+- Japan 0-3 Colombia → **Colombia**
+- Ecuador 0-1 Portugal → **Portugal**
 
 **Final**  
-- Mexico 0-2 Spain → **Spain**
+- Colombia 1-0 Portugal → **Colombia**
 
-**Champion: Spain** 🏆
+**Champion: Colombia** 🏆
