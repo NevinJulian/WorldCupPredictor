@@ -1,16 +1,16 @@
 # WC 2026 — live forecast grading (A/B)
 
-*Generated 2026-06-23; data as-of 2026-06-21. Running RPS (lower is better) of the **pre-match** prediction for every played WC-2026 match, for three variants on the same fixtures. As-of / leakage-free: each live prediction is built from data strictly before the match's matchday. Frozen = the immutable pre-tournament forecast (group fixtures only). The headline is the live **result-only vs xG-adjusted** A/B.*
+*Generated 2026-06-24; data as-of 2026-06-23. Running RPS (lower is better) of the **pre-match** prediction for every played WC-2026 match, for three variants on the same fixtures. As-of / leakage-free: each live prediction is built from data strictly before the match's matchday. Frozen = the immutable pre-tournament forecast (group fixtures only). The headline is the live **result-only vs xG-adjusted** A/B.*
 
 ## Running RPS
 
-Headline A/B over all 40 graded matches: result-only **0.1761** vs xG-adjusted **0.1761** → tied so far.
+Headline A/B over all 48 graded matches: result-only **0.1671** vs xG-adjusted **0.1671** → tied so far.
 
 | Variant | RPS (all matches) | RPS (group fixtures) | n |
 |--|--:|--:|--:|
-| Frozen pre-tournament | — | 0.1733 | 40 |
-| Live result-only (xG off) | 0.1761 | 0.1761 | 40 |
-| Live xG-adjusted (xG on) | 0.1761 | 0.1761 | 40 |
+| Frozen pre-tournament | — | 0.1648 | 48 |
+| Live result-only (xG off) | 0.1671 | 0.1671 | 48 |
+| Live xG-adjusted (xG on) | 0.1671 | 0.1671 | 48 |
 
 *The group-fixtures column is the clean three-way comparison on identical fixtures; the all-matches column adds knockout games (frozen has no knockout prediction).*
 
@@ -58,5 +58,13 @@ Headline A/B over all 40 graded matches: result-only **0.1761** vs xG-adjusted *
 | 2026-06-21 | group | New Zealand v Egypt | 1-3 | A | 0.1307 | 0.1124 | 0.1124 |
 | 2026-06-21 | group | Spain v Saudi Arabia | 4-0 | H | 0.0207 | 0.0298 | 0.0298 |
 | 2026-06-21 | group | Uruguay v Cape Verde | 2-2 | D | 0.2608 | 0.2540 | 0.2540 |
+| 2026-06-22 | group | France v Iraq | 3-0 | H | 0.0360 | 0.0269 | 0.0269 |
+| 2026-06-22 | group | Norway v Senegal | 3-2 | H | 0.2051 | 0.2083 | 0.2083 |
+| 2026-06-22 | group | Argentina v Austria | 2-0 | H | 0.0522 | 0.0641 | 0.0641 |
+| 2026-06-22 | group | Jordan v Algeria | 1-2 | A | 0.1602 | 0.1223 | 0.1223 |
+| 2026-06-23 | group | Portugal v Uzbekistan | 5-0 | H | 0.0862 | 0.0819 | 0.0819 |
+| 2026-06-23 | group | Colombia v DR Congo | 1-0 | H | 0.0613 | 0.0450 | 0.0450 |
+| 2026-06-23 | group | England v Ghana | 0-0 | D | 0.2641 | 0.3019 | 0.3019 |
+| 2026-06-23 | group | Panama v Croatia | 0-1 | A | 0.1117 | 0.1256 | 0.1256 |
 
-*40 matches graded (40 group). Early on the sample is small and result-only ≈ xG-adjusted (few prior games to re-weight); the gap is meaningful only as games accumulate.*
+*48 matches graded (48 group). Early on the sample is small and result-only ≈ xG-adjusted (few prior games to re-weight); the gap is meaningful only as games accumulate.*
