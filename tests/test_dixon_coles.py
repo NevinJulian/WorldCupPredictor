@@ -224,6 +224,96 @@ def test_overdispersion_keeps_matrix_a_valid_distribution():
     assert (M >= 0).all()
 
 
+# --------------------------------------------------------------------------- #
+# Competition weight (down-weight friendlies) — off by default
+# --------------------------------------------------------------------------- #
+def _params(m) -> np.ndarray:
+    """Flatten a fitted DC model's parameters for an exact comparison."""
+    ts = sorted(m.attack_)
+    return np.array([m.attack_[t] for t in ts] + [m.defence_[t] for t in ts]
+                    + [m.base_, m.home_adv_, m.rho])
+
+
+def _comp_frame(seed: int = 0):
+    """A history where EVERY team plays both competitive and friendly matches (so the team set is
+    identical with or without friendlies) — lets `friendly weight 0` be compared to a fit on the
+    competitive rows only."""
+    rng = np.random.default_rng(seed)
+    teams = [f"T{i}" for i in range(6)]
+    att = {t: float(rng.normal(0, 0.4)) for t in teams}
+    dfc = {t: float(rng.normal(0, 0.3)) for t in teams}
+    base, adv = 0.2, 0.25
+    rows, date = [], pd.Timestamp("2014-01-01")
+    for i in range(360):
+        date += pd.Timedelta(days=2)
+        h, a = rng.choice(teams, 2, replace=False)
+        neutral = bool(rng.integers(0, 2))
+        lam = np.exp(base + (0.0 if neutral else adv) + att[h] - dfc[a])
+        mu = np.exp(base + att[a] - dfc[h])
+        # Alternate tiers so every team gets both; competitive label maps to K_QUALIFIER.
+        tourn = "FIFA World Cup qualification" if i % 2 == 0 else "Friendly"
+        rows.append({"date": date, "home_team": h, "away_team": a,
+                     "home_score": int(rng.poisson(lam)), "away_score": int(rng.poisson(mu)),
+                     "neutral": neutral, "tournament": tourn})
+    df = pd.DataFrame(rows)
+    df["played"] = True
+    df["year"] = df["date"].dt.year
+    df["result"] = np.where(df.home_score > df.away_score, "H",
+                            np.where(df.home_score < df.away_score, "A", "D"))
+    return df
+
+
+def test_comp_weights_default_is_recency_only():
+    """None (default) is byte-identical to an explicit all-ones weighting — backward-compatible,
+    off until proven. A {"friendly": 1.0} that names only one tier is also a no-op."""
+    df = _comp_frame()
+    base = models.DixonColesModel().fit(df)
+    all_ones = models.DixonColesModel(
+        comp_weights={"competitive": 1.0, "friendly": 1.0, "other": 1.0}).fit(df)
+    friendly_one = models.DixonColesModel(comp_weights={"friendly": 1.0}).fit(df)
+    assert np.allclose(_params(base), _params(all_ones), atol=1e-9)
+    assert np.allclose(_params(base), _params(friendly_one), atol=1e-9)
+
+
+def test_comp_weights_down_weight_changes_the_fit():
+    """A friendly weight below 1 actually moves the fit (the lever does something)."""
+    df = _comp_frame()
+    base = models.DixonColesModel().fit(df)
+    leaned = models.DixonColesModel(comp_weights={"friendly": 0.3}).fit(df)
+    assert not np.allclose(_params(base), _params(leaned), atol=1e-3)
+
+
+def test_comp_weights_zero_friendly_equals_competitive_only():
+    """Friendly weight 0 reproduces a fit on the competitive rows alone (same teams, same recency
+    reference) — proof the weight keys purely on the tournament tier and removes friendlies'
+    influence, with no leakage from the dropped rows' results."""
+    from wcpred import datasets
+    df = _comp_frame(seed=2)
+    ref = df["date"].max()                       # pin the recency reference so both fits match
+    comp_only = df[datasets.competition_class(df) == "competitive"].copy()
+    assert set(comp_only["home_team"]) | set(comp_only["away_team"]) == set(df["home_team"]) | set(df["away_team"])
+    zeroed = models.DixonColesModel(comp_weights={"friendly": 0.0}).fit(df, ref_date=ref)
+    dropped = models.DixonColesModel().fit(comp_only, ref_date=ref)
+    assert np.allclose(_params(zeroed), _params(dropped), atol=1e-6)
+
+
+def test_comp_weights_is_as_of_does_not_see_test_only_teams():
+    """The competition weight does not break as-of fitting: a test-only team is still never learned
+    (the weight depends on tournament label + date, never the outcome or future rows)."""
+    from wcpred import datasets
+    frame = _wc_frame()
+    ghost = frame.iloc[[0]].copy()
+    ghost["date"] = pd.Timestamp("2010-06-20")
+    ghost["home_team"] = "Ghost"
+    ghost["tournament"] = "FIFA World Cup"
+    ghost["year"] = 2010
+    frame = pd.concat([frame, ghost], ignore_index=True)
+    train, test = datasets.tournament_holdout(frame, 2010)
+    model = models.DixonColesModel(comp_weights={"friendly": 0.4}).fit(train)
+    assert "Ghost" in set(test["home_team"]) | set(test["away_team"])
+    assert "Ghost" not in model.attack_
+
+
 def test_fit_is_as_of_does_not_see_test_only_teams():
     # 'Ghost' appears only in the 2010 WC test fold; fitting on the pre-2010 train must not
     # learn it (proves fit consumes training rows only — as-of, no leakage).
