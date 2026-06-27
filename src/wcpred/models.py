@@ -123,7 +123,9 @@ class DixonColesModel:
     **Fitting** maximises a recency-weighted likelihood: match `m` gets weight
     ``exp(-ln2 * age_days / half_life_days)`` relative to the most recent training match, so
     form half a half-life old counts for half (the default half-life is ~5 years — chosen on the
-    broadened competitive-internationals backtest, reports/eval_and_decay.md). Strengths (base,
+    broadened competitive-internationals backtest, reports/eval_and_decay.md). An optional
+    ``comp_weights`` multiplier (off by default) scales that weight by competition tier so
+    friendlies can count less than competitive internationals. Strengths (base,
     home_adv, attack, defence) are
     fit first by weighted Poisson MLE with an L2 ridge; `rho` is then fit by a 1-D MLE with
     the strengths held fixed (the ridge-free, near-identical Dixon-Coles factorisation — the
@@ -152,6 +154,7 @@ class DixonColesModel:
         rho_bounds: tuple[float, float] = (-0.2, 0.2),
         max_iter: int = 1000,
         overdispersion: float = 0.0,
+        comp_weights: dict[str, float] | None = None,
     ):
         self.half_life_days = half_life_days
         self.reg = reg
@@ -164,6 +167,14 @@ class DixonColesModel:
         # fattening the high-score tail; the fit (attack/defence/rho) is untouched, only the output
         # matrix shape changes. Reweighting then restores the target W/D/L (see scripts/overdispersion_gate.py).
         self.overdispersion = float(overdispersion)
+        # Optional per-match COMPETITION weight (off by default), multiplied into the recency
+        # weight in the likelihood. A dict {tier -> multiplier} keyed by datasets.competition_class
+        # ("competitive"/"friendly"/"other"); any tier absent from the dict defaults to 1.0. So
+        # e.g. {"friendly": 0.4} makes a friendly count 0.4x a competitive match of the same age,
+        # letting the goals-model MLE lean on qualifiers/continental/WC over noisy friendlies.
+        # Depends only on the tournament label + date, never the outcome -> leakage-free. None (the
+        # default) -> every match weight 1.0, i.e. recency-only, exactly the previous behaviour.
+        self.comp_weights = dict(comp_weights) if comp_weights else None
         # Fitted state (populated by .fit)
         self.base_ = 0.0
         self.home_adv_ = 0.0
@@ -191,6 +202,14 @@ class DixonColesModel:
         age_days = np.clip((ref - d["date"]).dt.days.to_numpy(dtype=float), 0.0, None)
         xi = np.log(2.0) / self.half_life_days
         w = np.exp(-xi * age_days)
+
+        # Optional competition weight: down-weight noisier tiers (e.g. friendlies) relative to
+        # competitive internationals. Keyed only on the tournament label (datasets.competition_class)
+        # -> leakage-free; applied to BOTH fit stages below because they share this `w`.
+        if self.comp_weights:
+            tiers = datasets.competition_class(d)
+            cw = tiers.map(lambda t: self.comp_weights.get(t, 1.0)).to_numpy(dtype=float)
+            w = w * cw
 
         # --- Stage 1: strengths via ridge-penalised weighted Poisson MLE -----
         def nll_and_grad(theta: np.ndarray) -> tuple[float, np.ndarray]:
